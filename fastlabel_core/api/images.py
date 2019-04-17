@@ -108,23 +108,15 @@ class ImageId(Resource):
         :param image_id:
         :return:
         """
-        image = ImageModel.objects.filter(id=image_id, deleted=False).first()
-        if image is None:
-            return {'success': False}, 400
-
-        return jsonify({'result': 'Success', 'image': image})
+        return ''
 
     @login_required
     def delete(self, image_id):
         """ Deletes an image by ID """
-        image = current_user.images.filter(id=image_id, deleted=False).first()
+        image = current_user.images.filter(id=image_id).first()
         if image is None:
             return {"message": "Invalid image id"}, 400
-
-        if not current_user.can_delete(image):
-            return {"message": "You do not have permission to download the image"}, 403
-
-        image.update(set__deleted=True, set__deleted_date=datetime.datetime.now())
+        image.delete()
         return {"success": True}
 
 

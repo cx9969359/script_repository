@@ -255,8 +255,7 @@ class DatasetDataId(Resource):
         if not os.path.exists(directory):
             return {'message': 'Directory does not exist.'}, 400
 
-        images = ImageModel.objects(dataset_id=dataset_id, path__startswith=directory, deleted=False, **query) \
-            .order_by('file_name')
+        images = ImageModel.objects(dataset_id=dataset_id, path__startswith=directory, **query).order_by('create_date')
         pagination = Pagination(images.count(), limit, page)
         images = images[pagination.start:pagination.end]
 
@@ -265,11 +264,7 @@ class DatasetDataId(Resource):
             image_json = query_util.fix_ids(image)
 
             query = AnnotationModel.objects(image_id=image.id)
-            category_ids = query.distinct('category_id')
-
             image_json['annotations'] = query.count()
-            image_json['categories'] = query_util.fix_ids(
-                CategoryModel.objects(id__in=category_ids).only('name', 'color'))
             image_json['permissions'] = image.permissions(current_user)
 
             images_json.append(image_json)

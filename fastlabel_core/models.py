@@ -141,20 +141,15 @@ class ImageModel(db.DynamicDocument):
     file_type = db.StringField()
     # 切片图片的格式
     piece_format = db.StringField(default='')
-
-    annotating = db.ListField(default=[])
     annotated = db.BooleanField(default=False)
 
     image_url = db.StringField()
     thumbnail_url = db.StringField(default='')
+    create_date = db.DateTimeField(default=datetime.datetime.now())
 
-    metadata = db.DictField()
-
-    license = db.IntField()
     coco_url = db.StringField()
 
     deleted = db.BooleanField(default=False)
-    deleted_date = db.DateTimeField()
 
     @classmethod
     def create_from_path(cls, path, dataset_id=None):
@@ -208,7 +203,7 @@ class ImageModel(db.DynamicDocument):
                 # 保存并获取缩略图路径
                 thumbnail = slide.get_thumbnail((200, 500))
                 thumbnail_name = '%s.jpeg' % image.file_name
-                dir = os.path.join(Config.DATASET_DIRECTORY, 'thumbnail')
+                dir = os.path.join(Config.DATASET_DIRECTORY, '_thumbnail')
                 if not os.path.exists(dir):
                     os.makedirs(dir)
                 thumbnail_url = os.path.join(dir, thumbnail_name)
