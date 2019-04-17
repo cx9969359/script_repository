@@ -19,7 +19,8 @@ class SlideFile():
 class Dzi():
     @login_required
     def get_dzi(self):
-        slide = OpenSlide(path)
-        deep_zoom = deepzoom.DeepZoomGenerator(slide, tile_size=Tile_Size, overlap=Overlap)
-        image_dzi = deep_zoom.get_dzi(format=Format)
-        return image_dzi
+        pass
+        # slide = OpenSlide(path)
+        # deep_zoom = deepzoom.DeepZoomGenerator(slide, tile_size=Tile_Size, overlap=Overlap)
+        # image_dzi = deep_zoom.get_dzi(format=Format)
+        # return image_dzi
