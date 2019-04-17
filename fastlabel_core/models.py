@@ -146,9 +146,7 @@ class ImageModel(db.DynamicDocument):
     annotated = db.BooleanField(default=False)
 
     image_url = db.StringField()
-    thumbnail_url = db.StringField()
-
-    category_ids = db.ListField(default=[])
+    thumbnail_url = db.StringField(default='')
 
     metadata = db.DictField()
 
@@ -164,7 +162,7 @@ class ImageModel(db.DynamicDocument):
         if not os.path.isdir(os.path.join(path)):
             full_name = os.path.basename(path)
             target_len = len(path) - len(full_name)
-            datasets_index = path.find('datasets')
+            datasets_index = path.find('tif_images')
             image.prefix_path = path[datasets_index:target_len - 1] + '/'
 
             name_list = full_name.split('.')
@@ -190,7 +188,7 @@ class ImageModel(db.DynamicDocument):
                 image.height = pil_image.size[1]
                 pil_image.close()
                 return image
-            if pattern == 'dzi':
+            elif pattern == 'dzi':
                 image.file_type = 'dzi'
                 import xml.etree.cElementTree as ET
                 root = ET.parse(path).getroot()
@@ -200,10 +198,25 @@ class ImageModel(db.DynamicDocument):
                         image.width = child.attrib['Width']
                         image.height = child.attrib['Height']
                 return image
-            if pattern == 'tif':
+            elif pattern == 'tif':
+                from openslide import OpenSlide
                 image.file_type = 'tif'
-                pass
-            if pattern == 'wsi':
+                slide = OpenSlide(path)
+                image.width = slide.dimensions[0]
+                image.height = slide.dimensions[1]
+
+                # 保存并获取缩略图路径
+                thumbnail = slide.get_thumbnail((200, 500))
+                thumbnail_name = '%s.jpeg' % image.file_name
+                dir = os.path.join(Config.DATASET_DIRECTORY, 'thumbnail')
+                if not os.path.exists(dir):
+                    os.makedirs(dir)
+                thumbnail_url = os.path.join(dir, thumbnail_name)
+                thumbnail.save(thumbnail_url, 'jpeg')
+                image.thumbnail_url = thumbnail_url
+                slide.close()
+                return image
+            elif pattern == 'wsi':
                 image.file_type = 'wsi'
                 pass
 
@@ -282,7 +295,6 @@ class AnnotationModel(db.DynamicDocument):
     bbox = db.ListField(defualt=[])
     creator = db.StringField(required=True)
     create_date = db.DateTimeField(default=datetime.datetime.now)
-
 
     def save(self, *args, **kwargs):
         if current_user:

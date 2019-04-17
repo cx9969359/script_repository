@@ -6,43 +6,21 @@ from ..models import ImageModel, CategoryModel, AnnotationModel
 def scan_func(task, socket, dataset):
     rootDir = dataset.directory
     task.info(f"Scanning {rootDir}")
-    walkDirectory(rootDir, task, socket, dataset)
+    walk_directory(rootDir, task, socket, dataset)
 
 
-def walkDirectory(rootDir, task, socket, dataset):
+def walk_directory(rootDir, task, socket, dataset):
     list_dir = os.listdir(rootDir)
     count = 0
     for file_name in list_dir:
         path = os.path.join(rootDir, file_name)
-        if os.path.isdir(path) and not ('_files' in file_name):
-            walkDirectory(path, task, socket, dataset)
+        if os.path.isdir(path) and not ('_files' in file_name) and not ('thumbnail' in file_name):
+            walk_directory(path, task, socket, dataset)
         else:
             set_progress_to_task(list_dir, path, task, socket)
             save_image_model_by_path(path, count, dataset, task)
     task.info(f"Created {count} new image(s)")
     task.set_progress(100, socket=socket)
-
-    # count = 0
-    # for file_name in dir_list:
-    #     if '_files' in file_name:
-    #         dzi_file_name = '{}.dzi'.format(file_name.split('_')[0])
-    #         if dzi_file_name in dir_list:
-    #             dir_list.remove(file_name)
-    #
-    # for my_file in dir_list:
-    #     file_path = os.path.join(directory, my_file)
-    #     if os.path.isdir(file_path):
-    #         for root, dirs, files in os.walk(file_path):
-    #             set_progress_to_task(dir_list, directory, task, socket)
-    #             for file in files:
-    #                 path = os.path.join(root, file)
-    #                 save_image_model_by_path(path, count, dataset, task)
-    #     else:
-    #         set_progress_to_task(dir_list, directory, task, socket)
-    #         path = os.path.join(directory, my_file)
-    #         save_image_model_by_path(path, count, dataset, task)
-    # task.info(f"Created {count} new image(s)")
-    # task.set_progress(100, socket=socket)
 
 
 def save_image_model_by_path(path, count, dataset, task):
