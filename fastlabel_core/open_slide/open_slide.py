@@ -35,7 +35,7 @@ class TileFile(Resource):
         tile = deep_zoom.get_tile(level, (col, row))
         buffer = BytesIO()
         # quality范围1-95，默认75
-        tile.save(buffer, format, qulity=80)
+        tile.save(buffer, format, qulity=90)
         tile_bytes = buffer.getvalue()
         res = make_response(tile_bytes)
         res.mimetype = 'image/ %s' % format
