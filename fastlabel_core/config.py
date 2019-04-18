@@ -15,7 +15,7 @@ class Config:
     # Flask instance
     SWAGGER_UI_JSONEDITOR = True
     MAX_CONTENT_LENGTH = 1 * 1024 * 1024 * 1024  # 1GB
-    MONGODB_HOST = "mongodb://192.168.23.23:27017/flask"
+    MONGODB_HOST = "mongodb://192.168.23.23:27017/tif"
     SECRET_KEY = os.getenv("SECRET_KEY", "<--- DEFAULT_SECRET_KEY --->")
 
     TESTING = os.getenv("TESTING", False)
