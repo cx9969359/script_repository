@@ -11,7 +11,6 @@ from .config import Config
 from .sockets import socketio
 from .watcher import run_watcher
 from .api import blueprint as api
-from .open_slide import blueprint as open_slide_api
 from .util import query_util, color_util
 from .authentication import login_manager
 
@@ -32,7 +31,6 @@ def create_app():
 
     flask.wsgi_app = ProxyFix(flask.wsgi_app)
     flask.register_blueprint(api)
-    flask.register_blueprint(open_slide_api)
 
     db.init_app(flask)
     login_manager.init_app(flask)

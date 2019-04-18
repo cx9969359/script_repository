@@ -11,6 +11,7 @@ from .admin import api as ns_admin
 from .tasks import api as ns_tasks
 from .undo import api as ns_undo
 from .info import api as ns_info
+from .open_slide import api as ns_open_slide
 
 from ..config import Config
 
@@ -37,4 +38,5 @@ api.add_namespace(ns_datasets)
 api.add_namespace(ns_tasks)
 api.add_namespace(ns_undo)
 api.add_namespace(ns_admin)
+api.add_namespace(ns_open_slide)
 

@@ -6,7 +6,7 @@ from openslide import OpenSlide, deepzoom
 
 from fastlabel_core import ImageModel
 
-api = Namespace('tif_images', description='')
+api = Namespace('open-slide', description='')
 Format = 'jpeg'
 Tile_Size = 256
 Overlap = 1
