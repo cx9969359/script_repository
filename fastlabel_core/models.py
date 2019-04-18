@@ -208,7 +208,7 @@ class ImageModel(db.DynamicDocument):
                     os.makedirs(dir)
                 thumbnail_save_url = os.path.join(dir, thumbnail_name)
                 thumbnail.save(thumbnail_save_url, 'jpeg')
-                image.thumbnail_url = image.prefix_path + thumbnail_name
+                image.thumbnail_url = '/tif_images/_thumbnail/' + thumbnail_name
                 slide.close()
                 return image
             elif pattern == 'wsi':
