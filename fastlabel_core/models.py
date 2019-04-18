@@ -206,9 +206,9 @@ class ImageModel(db.DynamicDocument):
                 dir = os.path.join(Config.DATASET_DIRECTORY, '_thumbnail')
                 if not os.path.exists(dir):
                     os.makedirs(dir)
-                thumbnail_url = os.path.join(dir, thumbnail_name)
-                thumbnail.save(thumbnail_url, 'jpeg')
-                image.thumbnail_url = thumbnail_url
+                thumbnail_save_url = os.path.join(dir, thumbnail_name)
+                thumbnail.save(thumbnail_save_url, 'jpeg')
+                image.thumbnail_url = image.prefix_path + thumbnail_name
                 slide.close()
                 return image
             elif pattern == 'wsi':
