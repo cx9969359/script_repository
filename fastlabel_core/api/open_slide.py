@@ -30,6 +30,7 @@ class Dzi(Resource):
 class TileFile(Resource):
     def get(self, path, level, col, row, format):
         slide = OpenSlide(path)
+        print(path)
         deep_zoom = deepzoom.DeepZoomGenerator(slide, tile_size=Tile_Size, overlap=Overlap)
         format = format.lower()
         tile = deep_zoom.get_tile(level, (col, row))
