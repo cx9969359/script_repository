@@ -1,3 +1,4 @@
+import os
 from io import BytesIO
 
 from flask import make_response
@@ -29,8 +30,7 @@ class Dzi(Resource):
 @api.route('/<path:path>_files/<int:level>/<int:col>_<int:row>.<format>')
 class TileFile(Resource):
     def get(self, path, level, col, row, format):
-        slide = OpenSlide(path)
-        print(path)
+        slide = OpenSlide(os.path.join(path))
         deep_zoom = deepzoom.DeepZoomGenerator(slide, tile_size=Tile_Size, overlap=Overlap)
         format = format.lower()
         tile = deep_zoom.get_tile(level, (col, row))
