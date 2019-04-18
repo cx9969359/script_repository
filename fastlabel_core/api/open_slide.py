@@ -30,6 +30,8 @@ class Dzi(Resource):
 @api.route('/<path:path>_files/<int:level>/<int:col>_<int:row>.<format>')
 class TileFile(Resource):
     def get(self, path, level, col, row, format):
+        path = '/' + path
+        print(os.path.join(path))
         slide = OpenSlide(os.path.join(path))
         deep_zoom = deepzoom.DeepZoomGenerator(slide, tile_size=Tile_Size, overlap=Overlap)
         format = format.lower()
