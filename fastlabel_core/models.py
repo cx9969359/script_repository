@@ -201,7 +201,7 @@ class ImageModel(db.DynamicDocument):
                 image.height = slide.dimensions[1]
 
                 # 保存并获取缩略图路径
-                thumbnail = slide.get_thumbnail((200, 500))
+                thumbnail = slide.get_thumbnail((150, 500))
                 thumbnail_name = '%s.jpeg' % image.file_name
                 dir = os.path.join(Config.DATASET_DIRECTORY, '_thumbnail')
                 if not os.path.exists(dir):
