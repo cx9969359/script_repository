@@ -21,7 +21,7 @@ class Config:
     TESTING = os.getenv("TESTING", False)
 
     # Dataset Options
-    DATASET_DIRECTORY = os.getenv("DATASET_DIRECTORY", "/tif_images/")
+    DATASET_DIRECTORY = os.getenv("DATASET_DIRECTORY", "/usr/share/nginx/html/tif_images/")
     INITIALIZE_FROM_FILE = os.getenv("INITIALIZE_FROM_FILE")
 
     # Coco Importer Options
