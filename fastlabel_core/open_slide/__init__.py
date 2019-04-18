@@ -2,11 +2,10 @@ from flask import Blueprint
 from flask_restplus import Api
 
 from .open_slide import api as ns_open_slide
-
 from ..config import Config
 
 # Create /api/ space
-blueprint = Blueprint('', __name__,url_prefix='')
+blueprint = Blueprint('', __name__, url_prefix='')
 
 api = Api(
     blueprint,

@@ -1,4 +1,5 @@
 import eventlet
+
 eventlet.monkey_patch(thread=False)
 
 from flask import Flask
@@ -14,14 +15,10 @@ from .open_slide import blueprint as open_slide_api
 from .util import query_util, color_util
 from .authentication import login_manager
 
-import threading
 import requests
-import time
-import os
 
 
 def create_app():
-
     if Config.FILE_WATCHER:
         run_watcher()
 
@@ -50,7 +47,6 @@ def create_app():
 
 app = create_app()
 
-
 if Config.INITIALIZE_FROM_FILE:
     create_from_json(Config.INITIALIZE_FROM_FILE)
 
@@ -58,7 +54,6 @@ if Config.INITIALIZE_FROM_FILE:
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def index(path):
-
     if app.debug:
         return requests.get('http://frontend:8080/{}'.format(path)).text
 
