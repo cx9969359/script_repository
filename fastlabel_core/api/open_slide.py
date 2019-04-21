@@ -2,6 +2,7 @@ import os
 from io import BytesIO
 
 from flask import make_response
+from flask_login import login_required
 from flask_restplus import Namespace, Resource
 from openslide import OpenSlide, deepzoom
 
@@ -13,18 +14,22 @@ Tile_Size = 256
 Overlap = 1
 
 
-@api.route('/dzi/<int:image_id>')
-class Dzi(Resource):
-    # @login_required
+@api.route('/thumbnail/<int:image_id>')
+class Thumbnail(Resource):
+    @login_required
     def get(self, image_id):
         image = ImageModel.objects.filter(id=image_id).first()
         if not image:
             return {"message": "Invalid image id"}, 400
-        image_path = image.path
-        slide = OpenSlide(image_path)
-        deep_zoom = deepzoom.DeepZoomGenerator(slide, tile_size=Tile_Size, overlap=Overlap)
-        dzi = deep_zoom.get_dzi(format='jpeg')
-        return dzi
+        slide = OpenSlide(image.path)
+        thumbnail = slide.get_thumbnail((150, 500))
+        buffer = BytesIO()
+        thumbnail.save(buffer, 'jpeg', qulity=90)
+        thumbnail_bytes = buffer.getvalue()
+        res = make_response(thumbnail_bytes)
+        res.mimetype = 'image/ %s' % 'jpeg'
+        slide.close()
+        return res
 
 
 @api.route('/<path:path>_files/<int:level>/<int:col>_<int:row>.<format>')

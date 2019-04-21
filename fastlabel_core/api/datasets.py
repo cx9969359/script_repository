@@ -198,7 +198,6 @@ class DatasetData(Resource):
                 dataset_json['first_image_type'] = images.first().file_type
                 dataset_json['first_image_prefix_path'] = images.first().prefix_path
                 dataset_json['first_image_piece_format'] = images.first().piece_format
-                dataset_json['first_image_thumbnail_url'] = images.first().thumbnail_url
             datasets_json.append(dataset_json)
 
         return {

@@ -5,7 +5,7 @@ import os
 
 class A:
     def a(self):
-        path ='E:\\open_tif\\have.tif'
+        path ='D:\\BaiduNetdiskDownload\\have.tif'
         slide = OpenSlide(path)
         deep_zoom = deepzoom.DeepZoomGenerator(slide, tile_size=256,overlap=1)
         print(deep_zoom)
@@ -14,7 +14,7 @@ class A:
         file_name = 'have'
         thumbnail_name = '%s.jpeg' % file_name
         print(thumbnail_name)
-        thumbnail.save('F:\\tif_images\\thyroid\\have.jpeg',format='jpeg')
+        # thumbnail.save('F:\\tif_images\\thyroid\\have.jpeg',format='jpeg')
 
         dzi = deep_zoom.get_dzi(format='jpeg')
         print(dzi)

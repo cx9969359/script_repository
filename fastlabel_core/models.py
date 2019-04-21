@@ -144,7 +144,6 @@ class ImageModel(db.DynamicDocument):
     annotated = db.BooleanField(default=False)
 
     image_url = db.StringField()
-    thumbnail_url = db.StringField(default='')
     create_date = db.DateTimeField(default=datetime.datetime.now())
 
     coco_url = db.StringField()
@@ -199,16 +198,6 @@ class ImageModel(db.DynamicDocument):
                 slide = OpenSlide(path)
                 image.width = slide.dimensions[0]
                 image.height = slide.dimensions[1]
-
-                # 保存并获取缩略图路径
-                thumbnail = slide.get_thumbnail((150, 500))
-                thumbnail_name = '%s.jpeg' % image.file_name
-                dir = os.path.join(Config.DATASET_DIRECTORY, '_thumbnail')
-                if not os.path.exists(dir):
-                    os.makedirs(dir)
-                thumbnail_save_url = os.path.join(dir, thumbnail_name)
-                thumbnail.save(thumbnail_save_url, 'jpeg')
-                image.thumbnail_url = '/tif_images/_thumbnail/' + thumbnail_name
                 slide.close()
                 return image
             elif pattern == 'wsi':
