@@ -20,9 +20,9 @@ class Thumbnail(Resource):
         if not image:
             return {"message": "Invalid image id"}, 400
         slide = OpenSlide(image.path)
-        thumbnail = slide.get_thumbnail((150, 500))
+        thumbnail = slide.get_thumbnail((250, 500))
         buffer = BytesIO()
-        thumbnail.save(buffer, 'jpeg', qulity=90)
+        thumbnail.save(buffer, 'jpeg', qulity=95)
         thumbnail_bytes = buffer.getvalue()
         res = make_response(thumbnail_bytes)
         res.mimetype = 'image/ %s' % 'jpeg'
