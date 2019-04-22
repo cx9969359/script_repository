@@ -9,6 +9,7 @@ from werkzeug.datastructures import FileStorage
 from ..models import *
 from ..util import query_util, coco_util
 from ..util.pagination_util import Pagination
+from ..api.service.open_slidea_service import get_image_thumbnail
 
 api = Namespace('dataset', description='Dataset related operations')
 
@@ -198,6 +199,7 @@ class DatasetData(Resource):
                 dataset_json['first_image_type'] = images.first().file_type
                 dataset_json['first_image_prefix_path'] = images.first().prefix_path
                 dataset_json['first_image_piece_format'] = images.first().piece_format
+                dataset_json['first_image_thumbnail'] = get_image_thumbnail(images.first())
             datasets_json.append(dataset_json)
 
         return {
