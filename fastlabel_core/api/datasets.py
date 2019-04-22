@@ -40,6 +40,9 @@ dataset_generate.add_argument('limit', location='json', type=int, default=100, h
 share = reqparse.RequestParser()
 share.add_argument('users', location='json', type=list, default=[], help="List of users")
 
+add_administrator = reqparse.RequestParser()
+add_administrator.add_argument('user_id', location='json', type=int, required=True, help='Add administrator to dataset')
+
 
 @api.route('/')
 class Dataset(Resource):
@@ -314,22 +317,48 @@ class DatasetCoco(Resource):
         return dataset.import_coco(json.load(coco))
 
 
-@api.route('/coco/<int:import_id>')
-class DatasetCocoId(Resource):
+@api.route('/administration/<int:dataset_id>')
+class DataSetAdministration(Resource):
 
     @login_required
-    def get(self, import_id):
-        """ Returns current progress and errors of a coco import """
-        coco_import = CocoImportModel.objects(
-            id=import_id, creator=current_user.username).first()
+    def get(self, dataset_id):
+        dataset = DatasetModel.objects(id=dataset_id).first()
+        if not dataset:
+            return {'message': 'Invalid dataset ID'}, 400
 
-        if not coco_import:
-            return {'message': 'No such coco import'}, 400
+    @api.expect(add_administrator)
+    @login_required
+    def post(self, dataset_id):
+        dataset = DatasetModel.objects(id=dataset_id).first()
+        if not dataset:
+            return {'message': 'Invalid dataset ID'}, 400
+        user_id = add_administrator.parse_args().get('user_id')
+        user = UserModel.objects(id=user_id).first()
+        user_id_list = [user.id for user in dataset.administrator_list]
+        if user_id not in user_id_list:
+            obj = {}
+            obj['id'] = user_id
+            obj['username'] = user.username
+            obj['add_time'] = datetime.datetime.now()
+            dataset.administrator_list.append(obj)
+        return 'Success'
 
-        return {
-            "progress": coco_import.progress,
-            "errors": coco_import.errors
-        }
+    @login_required
+    def delete(self, dataset_id):
+        dataset = DatasetModel.objects(id=dataset_id).first()
+        if not dataset:
+            return {'message': 'Invalid dataset ID'}, 400
+        user_id = request.args.get('user_id')
+        user_id_list = [user.id for user in dataset.administrator_list]
+        if user_id not in user_id_list:
+            return {'message': 'Invalid user ID'}, 400
+        else:
+            for index, item in enumerate(dataset.administrator_list):
+                if item.id == user_id:
+                    dataset.administrator_list.pop(index)
+                    dataset.save()
+                    break
+            return {'result': 'Remove success'}
 
 
 @api.route('/<int:dataset_id>/scan')

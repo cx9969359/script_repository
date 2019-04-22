@@ -18,9 +18,9 @@ class DatasetModel(db.DynamicDocument):
     id = db.SequenceField(primary_key=True)
     name = db.StringField(required=True, unique=True)
     directory = db.StringField()
-
     creator = db.StringField(required=True)
     create_date = db.DateTimeField(default=datetime.datetime.now())
+    administrator_list = db.ListField(default=[])
     deleted = db.BooleanField(default=False)
     deleted_date = db.DateTimeField()
 

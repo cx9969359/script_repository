@@ -1,9 +1,10 @@
+from flask import request, jsonify
 from flask_login import login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask_restplus import Namespace, Resource, reqparse
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from ..models import UserModel
 from ..config import Config
+from ..models import UserModel
 from ..util.query_util import fix_ids
 
 api = Namespace('user', description='User related operations')
@@ -118,3 +119,18 @@ class UserLogout(Resource):
         logout_user()
         return {'success': True}
 
+
+@api.route('/all-user')
+class AllUser(Resource):
+    @login_required
+    def get(self):
+        """
+        根据用户名获取用户列表
+        :return:
+        """
+        username = request.args.get('username')
+        if username:
+            user_list = UserModel.objects(username__contains=username).only('id', 'username')
+        else:
+            user_list = UserModel.objects.only('id', 'username')
+        return jsonify({'user_list': user_list})
