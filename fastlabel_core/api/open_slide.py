@@ -6,6 +6,7 @@ from flask_restplus import Namespace, Resource
 from openslide import OpenSlide, deepzoom
 
 from fastlabel_core import ImageModel
+from fastlabel_core.api.service.open_slidea_service import get_image_thumbnail
 
 api = Namespace('open-slide', description='')
 Format = 'jpeg'
@@ -19,14 +20,9 @@ class Thumbnail(Resource):
         image = ImageModel.objects.filter(id=image_id).first()
         if not image:
             return {"message": "Invalid image id"}, 400
-        slide = OpenSlide(image.path)
-        thumbnail = slide.get_thumbnail((250, 500))
-        buffer = BytesIO()
-        thumbnail.save(buffer, 'jpeg', qulity=95)
-        thumbnail_bytes = buffer.getvalue()
+        thumbnail_bytes = get_image_thumbnail(image)
         res = make_response(thumbnail_bytes)
         res.mimetype = 'image/ %s' % 'jpeg'
-        slide.close()
         return res
 
 
