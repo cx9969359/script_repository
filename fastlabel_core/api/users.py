@@ -120,7 +120,7 @@ class UserLogout(Resource):
         return {'success': True}
 
 
-@api.route('/all-user')
+@api.route('/select-user')
 class AllUser(Resource):
     @login_required
     def get(self):
