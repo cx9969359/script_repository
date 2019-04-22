@@ -2,7 +2,6 @@ import os
 from io import BytesIO
 
 from flask import make_response
-from flask_login import login_required
 from flask_restplus import Namespace, Resource
 from openslide import OpenSlide, deepzoom
 
@@ -16,7 +15,6 @@ Overlap = 1
 
 @api.route('/thumbnail/<int:image_id>')
 class Thumbnail(Resource):
-    @login_required
     def get(self, image_id):
         image = ImageModel.objects.filter(id=image_id).first()
         if not image:
