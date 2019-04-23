@@ -350,13 +350,13 @@ class DataSetAdministration(Resource):
         dataset = DatasetModel.objects(id=dataset_id).first()
         if not dataset:
             return {'message': 'Invalid dataset ID'}, 400
-        user_id = request.args.get('user_id')
-        user_id_list = [user.id for user in dataset.administrator_list]
-        if user_id not in user_id_list:
+        username = request.args.get('username')
+        user_username_list = [user['username'] for user in dataset.administrator_list]
+        if username not in user_username_list:
             return {'message': 'Invalid user ID'}, 400
         else:
             for index, item in enumerate(dataset.administrator_list):
-                if item.id == user_id:
+                if item['username'] == username:
                     dataset.administrator_list.pop(index)
                     dataset.save()
                     break
