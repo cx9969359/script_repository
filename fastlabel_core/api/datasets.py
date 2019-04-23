@@ -300,6 +300,11 @@ class DatasetDataId(Resource):
             image_json = query_util.fix_ids(image)
 
             query = AnnotationModel.objects(image_id=image.id)
+            categories = []
+            for annotation in query:
+                if annotation.category_name not in categories:
+                    categories.append(annotation.category_name)
+            image_json['categories'] = categories
             image_json['annotations'] = query.count()
             image_json['permissions'] = image.permissions(current_user)
 
