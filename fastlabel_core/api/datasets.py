@@ -342,6 +342,7 @@ class DataSetAdministration(Resource):
             obj['username'] = username
             obj['add_time'] = datetime.datetime.now()
             dataset.administrator_list.append(obj)
+            dataset.save()
         return 'Add success'
 
     @login_required
