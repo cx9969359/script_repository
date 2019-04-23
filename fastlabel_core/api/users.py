@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request
 from flask_login import login_user, login_required, logout_user, current_user
 from flask_restplus import Namespace, Resource, reqparse
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -130,8 +130,8 @@ class AllUser(Resource):
         """
         username = request.args.get('username', '')
         if username:
-            user_list = UserModel.objects(username__contains=username).only('id','username')
+            user_list = UserModel.objects(username__contains=username).only('id', 'username')
         else:
             user_list = UserModel.objects.only('id', 'username')
         user_list = fix_ids(user_list)
-        return user_list
+        return {'user_list': user_list}
