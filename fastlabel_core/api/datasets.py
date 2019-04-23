@@ -6,6 +6,7 @@ from flask_restplus import Namespace, Resource, reqparse
 from google_images_download import google_images_download as gid
 from werkzeug.datastructures import FileStorage
 
+from fastlabel_core.util.query_util import fix_ids
 from ..models import *
 from ..util import query_util, coco_util
 from ..util.pagination_util import Pagination
@@ -326,6 +327,7 @@ class DataSetAdministration(Resource):
         dataset = DatasetModel.objects(id=dataset_id).first()
         if not dataset:
             return {'message': 'Invalid dataset ID'}, 400
+        return fix_ids(dataset)
 
     @api.expect(add_administrator)
     @login_required
