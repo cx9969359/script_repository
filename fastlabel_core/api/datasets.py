@@ -360,7 +360,7 @@ class DataSetAdministration(Resource):
                     dataset.administrator_list.pop(index)
                     dataset.save()
                     break
-            return {'result': 'Remove success'}
+            return 'Remove success'
 
 
 @api.route('/<int:dataset_id>/scan')
