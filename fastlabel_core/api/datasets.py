@@ -180,36 +180,39 @@ class DatasetData(Resource):
         :return:
         """
         current_username = current_user.username
-        datasets = DatasetModel.objects(creator=current_username).order_by('create_date')
-
-        datasets_json = []
-        for dataset in datasets:
-            dataset_json = query_util.fix_ids(dataset)
-            images = ImageModel.objects(dataset_id=dataset.id)
-
-            dataset_json['numberImages'] = images.count()
-            dataset_json['numberAnnotated'] = images.filter(annotated=True).count()
-            dataset_json['permissions'] = dataset.permissions(current_user)
-            dataset_json['is_creator'] = 'true'
-
-            first = images.first()
-            if first is not None:
-                dataset_json['first_image_id'] = images.first().id
-                dataset_json['first_image_name'] = images.first().file_name
-                dataset_json['first_image_type'] = images.first().file_type
-            datasets_json.append(dataset_json)
-
-        datasets_created_by_others = DatasetModel.objects(creator__not__iexact=current_username).order_by('create_date')
-        for data_set in datasets_created_by_others:
-            can_edit_username_list = [user['username'] for user in data_set.administrator_list]
-            if current_username in can_edit_username_list:
-                dataset_json = query_util.fix_ids(data_set)
-                images = ImageModel.objects(dataset_id=data_set.id)
+        # 超级管理员可查看编辑所有data_set
+        if current_username == 'admin':
+            datasets = DatasetModel.objects.all().order_by('create_date')
+            datasets_json = []
+            for dataset in datasets:
+                dataset_json = query_util.fix_ids(dataset)
+                images = ImageModel.objects(dataset_id=dataset.id)
 
                 dataset_json['numberImages'] = images.count()
                 dataset_json['numberAnnotated'] = images.filter(annotated=True).count()
-                dataset_json['permissions'] = data_set.permissions(current_user)
-                dataset_json['is_creator'] = 'false'
+                dataset_json['permissions'] = dataset.permissions(current_user)
+                dataset_json['is_creator'] = 'true'
+
+                first = images.first()
+                if first is not None:
+                    dataset_json['first_image_id'] = images.first().id
+                    dataset_json['first_image_name'] = images.first().file_name
+                    dataset_json['first_image_type'] = images.first().file_type
+                datasets_json.append(dataset_json)
+            return {"datasets": datasets_json}
+        else:
+            # 普通用户
+            datasets = DatasetModel.objects(creator=current_username).order_by('create_date')
+
+            datasets_json = []
+            for dataset in datasets:
+                dataset_json = query_util.fix_ids(dataset)
+                images = ImageModel.objects(dataset_id=dataset.id)
+
+                dataset_json['numberImages'] = images.count()
+                dataset_json['numberAnnotated'] = images.filter(annotated=True).count()
+                dataset_json['permissions'] = dataset.permissions(current_user)
+                dataset_json['is_creator'] = 'true'
 
                 first = images.first()
                 if first is not None:
@@ -218,7 +221,27 @@ class DatasetData(Resource):
                     dataset_json['first_image_type'] = images.first().file_type
                 datasets_json.append(dataset_json)
 
-        return {"datasets": datasets_json}
+            datasets_created_by_others = DatasetModel.objects(creator__not__iexact=current_username).order_by(
+                'create_date')
+            for data_set in datasets_created_by_others:
+                can_edit_username_list = [user['username'] for user in data_set.administrator_list]
+                if current_username in can_edit_username_list:
+                    dataset_json = query_util.fix_ids(data_set)
+                    images = ImageModel.objects(dataset_id=data_set.id)
+
+                    dataset_json['numberImages'] = images.count()
+                    dataset_json['numberAnnotated'] = images.filter(annotated=True).count()
+                    dataset_json['permissions'] = data_set.permissions(current_user)
+                    dataset_json['is_creator'] = 'false'
+
+                    first = images.first()
+                    if first is not None:
+                        dataset_json['first_image_id'] = images.first().id
+                        dataset_json['first_image_name'] = images.first().file_name
+                        dataset_json['first_image_type'] = images.first().file_type
+                    datasets_json.append(dataset_json)
+
+            return {"datasets": datasets_json}
 
 
 @api.route('/<int:dataset_id>/data')
