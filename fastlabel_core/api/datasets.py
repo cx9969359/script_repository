@@ -41,7 +41,7 @@ share = reqparse.RequestParser()
 share.add_argument('users', location='json', type=list, default=[], help="List of users")
 
 add_administrator = reqparse.RequestParser()
-add_administrator.add_argument('user_id', location='json', type=int, required=True, help='Add administrator to dataset')
+add_administrator.add_argument('user_id', location='json', type=object, required=True, help='Add administrator to dataset')
 
 
 @api.route('/')
