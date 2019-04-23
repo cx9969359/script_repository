@@ -97,7 +97,7 @@ class DatasetModel(db.DynamicDocument):
         if user.is_admin:
             return True
 
-        return user.username.lower() == self.owner.lower()
+        return user.username.lower() == self.creator.lower()
 
     def can_download(self, user):
         return self.is_owner(user)
