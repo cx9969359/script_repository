@@ -133,4 +133,5 @@ class AllUser(Resource):
             user_list = UserModel.objects(username__contains=username).only('id','username')
         else:
             user_list = UserModel.objects.only('id', 'username')
-        return jsonify({'user_list': user_list})
+        user_list = fix_ids(user_list)
+        return user_list

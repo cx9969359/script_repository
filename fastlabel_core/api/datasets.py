@@ -341,7 +341,7 @@ class DataSetAdministration(Resource):
             obj['username'] = user.username
             obj['add_time'] = datetime.datetime.now()
             dataset.administrator_list.append(obj)
-        return 'Success'
+        return 'Add success'
 
     @login_required
     def delete(self, dataset_id):
