@@ -181,7 +181,7 @@ class DatasetData(Resource):
         """
         current_username = current_user.username
         # 超级管理员可查看编辑所有data_set
-        if current_username.is_admin:
+        if current_user.is_admin:
             datasets = DatasetModel.objects.all().order_by('create_date')
             datasets_json = []
             for dataset in datasets:
