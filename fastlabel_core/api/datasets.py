@@ -1,3 +1,4 @@
+from itertools import chain
 from threading import Thread
 
 from flask import request
@@ -183,7 +184,7 @@ class DatasetData(Resource):
         for data_set in datasets_created_by_others:
             can_edit_username_list = [user['username'] for user in data_set.administrator_list]
             if current_username in can_edit_username_list:
-                datasets.append(data_set)
+                datasets = chain(datasets, data_set)
 
         datasets_json = []
         for dataset in datasets:
