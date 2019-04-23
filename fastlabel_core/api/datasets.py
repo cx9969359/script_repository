@@ -340,7 +340,7 @@ class DataSetAdministration(Resource):
         if (username not in user_name_list) and (username != dataset.creator):
             obj = {}
             obj['username'] = username
-            obj['add_time'] = datetime.datetime.now()
+            obj['add_time'] = datetime.datetime.now().strftime('%Y-%m-%d')
             dataset.administrator_list.append(obj)
             dataset.save()
         return 'Add success'
