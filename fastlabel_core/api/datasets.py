@@ -336,7 +336,7 @@ class DataSetAdministration(Resource):
         username = add_administrator.parse_args().get('username')
         user = UserModel.objects(username=username).first()
         print(user)
-        user_name_list = [user.name for user in dataset.administrator_list]
+        user_name_list = [user.username for user in dataset.administrator_list]
         if (username not in user_name_list) and (username != dataset.creator):
             obj = {}
             obj['username'] = username
