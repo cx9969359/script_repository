@@ -353,7 +353,7 @@ class DataSetAdministration(Resource):
         username = request.args.get('username')
         user_username_list = [user['username'] for user in dataset.administrator_list]
         if username not in user_username_list:
-            return {'message': 'Invalid user ID'}, 400
+            return {'message': 'No such an administrator of this dataset'}, 400
         else:
             for index, item in enumerate(dataset.administrator_list):
                 if item['username'] == username:
