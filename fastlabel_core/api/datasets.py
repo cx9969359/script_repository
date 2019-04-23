@@ -328,7 +328,7 @@ class DataSetAdministration(Resource):
             return {'message': 'Invalid dataset ID'}, 400
 
     @api.expect(add_administrator)
-    # @login_required
+    @login_required
     def post(self, dataset_id):
         dataset = DatasetModel.objects(id=dataset_id).first()
         if not dataset:
