@@ -41,7 +41,8 @@ share = reqparse.RequestParser()
 share.add_argument('users', location='json', type=list, default=[], help="List of users")
 
 add_administrator = reqparse.RequestParser()
-add_administrator.add_argument('user_id', location='json', type=str, required=True, help='Add administrator to dataset')
+add_administrator.add_argument('username', location='json', type=str, required=True,
+                               help='Add administrator to dataset')
 
 
 @api.route('/')
@@ -327,18 +328,18 @@ class DataSetAdministration(Resource):
             return {'message': 'Invalid dataset ID'}, 400
 
     @api.expect(add_administrator)
-    @login_required
+    # @login_required
     def post(self, dataset_id):
         dataset = DatasetModel.objects(id=dataset_id).first()
         if not dataset:
             return {'message': 'Invalid dataset ID'}, 400
-        user_id = add_administrator.parse_args().get('user_id')
-        user = UserModel.objects(id=user_id).first()
-        user_id_list = [user.id for user in dataset.administrator_list]
-        if user_id not in user_id_list:
+        username = add_administrator.parse_args().get('username')
+        user = UserModel.objects(username=username).first()
+        print(user)
+        user_name_list = [user.name for user in dataset.administrator_list]
+        if (username not in user_name_list) and (username != dataset.creator):
             obj = {}
-            obj['id'] = user_id
-            obj['username'] = user.username
+            obj['username'] = username
             obj['add_time'] = datetime.datetime.now()
             dataset.administrator_list.append(obj)
         return 'Add success'
