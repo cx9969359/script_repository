@@ -1,7 +1,6 @@
-from itertools import chain
 from threading import Thread
 
-from flask import request, jsonify
+from flask import request
 from flask_login import login_required
 from flask_restplus import Namespace, Resource, reqparse
 from google_images_download import google_images_download as gid
@@ -191,14 +190,13 @@ class DatasetData(Resource):
             dataset_json['numberImages'] = images.count()
             dataset_json['numberAnnotated'] = images.filter(annotated=True).count()
             dataset_json['permissions'] = dataset.permissions(current_user)
+            dataset_json['is_creator'] = 'true'
 
             first = images.first()
             if first is not None:
                 dataset_json['first_image_id'] = images.first().id
                 dataset_json['first_image_name'] = images.first().file_name
                 dataset_json['first_image_type'] = images.first().file_type
-                dataset_json['first_image_prefix_path'] = images.first().prefix_path
-                dataset_json['first_image_piece_format'] = images.first().piece_format
             datasets_json.append(dataset_json)
 
         datasets_created_by_others = DatasetModel.objects(creator__not__iexact=current_username).order_by('create_date')
@@ -211,17 +209,16 @@ class DatasetData(Resource):
                 dataset_json['numberImages'] = images.count()
                 dataset_json['numberAnnotated'] = images.filter(annotated=True).count()
                 dataset_json['permissions'] = data_set.permissions(current_user)
+                dataset_json['is_creator'] = 'false'
 
                 first = images.first()
                 if first is not None:
                     dataset_json['first_image_id'] = images.first().id
                     dataset_json['first_image_name'] = images.first().file_name
                     dataset_json['first_image_type'] = images.first().file_type
-                    dataset_json['first_image_prefix_path'] = images.first().prefix_path
-                    dataset_json['first_image_piece_format'] = images.first().piece_format
                 datasets_json.append(dataset_json)
 
-        return { "datasets": datasets_json }
+        return {"datasets": datasets_json}
 
 
 @api.route('/<int:dataset_id>/data')
