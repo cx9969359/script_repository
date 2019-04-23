@@ -19,6 +19,8 @@ dataset_create.add_argument('name', required=True)
 
 page_data = reqparse.RequestParser()
 page_data.add_argument('folder', default='', help='Folder for data')
+page_data.add_argument('page', default=1, type=int)
+page_data.add_argument('limit', default=20, type=int)
 
 delete_data = reqparse.RequestParser()
 delete_data.add_argument('fully', default=False, type=bool,
@@ -204,10 +206,7 @@ class DatasetData(Resource):
                 dataset_json['first_image_piece_format'] = images.first().piece_format
             datasets_json.append(dataset_json)
 
-        return {
-            "datasets": datasets_json,
-            "categories": query_util.fix_ids(current_user.categories.filter(deleted=False).all())
-        }
+        return { "datasets": datasets_json }
 
 
 @api.route('/<int:dataset_id>/data')
