@@ -17,8 +17,6 @@ dataset_create = reqparse.RequestParser()
 dataset_create.add_argument('name', required=True)
 
 page_data = reqparse.RequestParser()
-page_data.add_argument('page', default=1, type=int)
-page_data.add_argument('limit', default=20, type=int)
 page_data.add_argument('folder', default='', help='Folder for data')
 
 delete_data = reqparse.RequestParser()
@@ -173,19 +171,19 @@ class DatasetIdShare(Resource):
 
 @api.route('/data')
 class DatasetData(Resource):
-    @api.expect(page_data)
     @login_required
     def get(self):
-        """ Endpoint called by dataset viewer client """
-
-        args = page_data.parse_args()
-        limit = args['limit']
-        page = args['page']
-        folder = args['folder']
-
-        datasets = current_user.datasets.filter(deleted=False)
-        pagination = Pagination(datasets.count(), limit, page)
-        datasets = datasets[pagination.start:pagination.end]
+        """
+        返回当前用户可编辑查看的所有data_set
+        :return:
+        """
+        current_username = current_user.username
+        datasets = DatasetModel.objects(creator=current_username).order_by('create_date')
+        datasets_created_by_others = DatasetModel.objects(creator__not__iexact=current_username).order_by('create_date')
+        for data_set in datasets_created_by_others:
+            can_edit_username_list = [user['username'] for user in data_set.administrator_list]
+            if current_username in can_edit_username_list:
+                datasets.append(data_set)
 
         datasets_json = []
         for dataset in datasets:
@@ -206,8 +204,6 @@ class DatasetData(Resource):
             datasets_json.append(dataset_json)
 
         return {
-            "pagination": pagination.export(),
-            "folder": folder,
             "datasets": datasets_json,
             "categories": query_util.fix_ids(current_user.categories.filter(deleted=False).all())
         }
