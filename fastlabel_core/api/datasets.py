@@ -43,9 +43,6 @@ share.add_argument('users', location='json', type=list, default=[], help="List o
 add_administrator = reqparse.RequestParser()
 add_administrator.add_argument('username', location='json', type=str, required=True,
                                help='Add administrator to dataset')
-remove_administrator = reqparse.RequestParser()
-remove_administrator.add_argument('username', location='json', type=str, required=True,
-                                  help='Remove administrator to dataset')
 
 
 @api.route('/')
@@ -348,12 +345,8 @@ class DataSetAdministration(Resource):
             dataset.save()
         return 'Add success'
 
-
-@api.route('/administration/remove/<int:dataset_id>')
-class RemoveDataSetAdministration(Resource):
-    @api.expect(remove_administrator)
     @login_required
-    def post(self, dataset_id):
+    def delete(self, dataset_id):
         dataset = DatasetModel.objects(id=dataset_id).first()
         if not dataset:
             return {'message': 'Invalid dataset ID'}, 400
