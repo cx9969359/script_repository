@@ -4,7 +4,6 @@ from .util.version_util import get_tag
 
 
 class Config:
-
     NAME = "COCO Annotator"
     VERSION = get_tag()
 

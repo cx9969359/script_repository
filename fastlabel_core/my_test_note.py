@@ -1,25 +1,38 @@
 import datetime
-from openslide import OpenSlide,deepzoom
+from openslide import OpenSlide, deepzoom
 import os
+import pyvips
+from multiprocessing import Pool
+import multiprocessing
+import time
+from functools import partial
+
+from celery_package.tasks import one
 
 
-class A:
-    def a(self):
-        path ='D:\\BaiduNetdiskDownload\\have.tif'
-        slide = OpenSlide(path)
-        deep_zoom = deepzoom.DeepZoomGenerator(slide, tile_size=256,overlap=1)
-        print(deep_zoom)
-        thumbnail = slide.get_thumbnail((200,500))
-        print(thumbnail)
-        file_name = 'have'
-        thumbnail_name = '%s.jpeg' % file_name
-        print(thumbnail_name)
-        # thumbnail.save('F:\\tif_images\\thyroid\\have.jpeg',format='jpeg')
-
-        dzi = deep_zoom.get_dzi(format='jpeg')
-        print(dzi)
+def notify():
+    result = one.apply_async(args=[1, 3])
+    return result
 
 
 if __name__ == '__main__':
-    a = A()
-    a.a()
+    result = notify()
+    print(result)
+    print(result.status)
+    print(result.id)
+    # testFl = [1, 2, 3, 4,5,6]
+    # start = time.time()
+    # for fn in testFl:
+    #     run(fn)
+    # e1 = time.time()
+    # print({'单进程': (e1 - start)})
+    # pool = Pool(6)
+    # r = pool.map(run, testFl)
+    # # 关闭不再接收线程
+    # pool.close()
+    # # 主进程阻塞等待所有子进程执行完毕
+    # pool.join()
+    # e2 = time.time()
+    #
+    # print('多进程 ' + '\t' + str((e2 - e1)))
+    # print(r)

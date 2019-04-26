@@ -1,11 +1,9 @@
 from flask_restplus import Namespace, Resource
-from flask_login import login_required, current_user
+from flask_login import login_required
 from flask import request
 
-from ..util import query_util
 from ..util import coco_util
 from ..models import *
-
 
 api = Namespace('annotator', description='Annotator related operations')
 
@@ -30,7 +28,7 @@ class AnnotatorData(Resource):
         # Check if current user can access dataset
         if current_user.datasets.filter(id=image_model.dataset_id).first() is None:
             return {'success': False, 'message': 'Could not find associated dataset'}
-        
+
         categories = CategoryModel.objects.all()
         annotations = AnnotationModel.objects(image_id=image_id)
 
@@ -79,7 +77,7 @@ class AnnotatorData(Resource):
                     height = db_annotation.height
 
                     # Generate coco formatted segmentation data
-                    segmentation, area, bbox = coco_util.\
+                    segmentation, area, bbox = coco_util. \
                         paperjs_to_coco(width, height, paperjs_object)
 
                     db_annotation.update(
@@ -100,6 +98,7 @@ class AnnotatorData(Resource):
 
         return data
 
+
 @api.route('/data')
 class AnnotatorData(Resource):
 
@@ -114,3 +113,10 @@ class AnnotatorData(Resource):
         dataset_id = data.get('dataset_id')
         coordinate = data.get('coordinate')
         bbox = data.get('bbox')
+
+    def get(self):
+        from celery_package.tasks import one
+        r = one.apply_async(args=[1, 3])
+        print(r.result)
+        print(r.status)
+
