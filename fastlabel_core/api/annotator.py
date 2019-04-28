@@ -1,3 +1,4 @@
+from flask.json import jsonify
 from flask_restplus import Namespace, Resource
 from flask_login import login_required
 from flask import request
@@ -116,7 +117,7 @@ class AnnotatorData(Resource):
 
     def get(self):
         from celery_package.tasks import one
-        r = one.apply_async(args=[1, 3])
-        print(r.result)
-        print(r.status)
-
+        r = one.apply_async()
+        while True:
+            if r.status == 'SUCCESS':
+                return jsonify({'status': r.status, 'result': r.result})

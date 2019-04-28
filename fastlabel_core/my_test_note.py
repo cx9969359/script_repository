@@ -1,12 +1,3 @@
-import datetime
-from openslide import OpenSlide, deepzoom
-import os
-import pyvips
-from multiprocessing import Pool
-import multiprocessing
-import time
-from functools import partial
-
 from celery_package.tasks import one
 
 
