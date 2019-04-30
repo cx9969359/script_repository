@@ -1,29 +1,29 @@
-from celery_package.tasks import one
+import ast
+import os
+import random
+import random
+import threading
+import time
+import time
+from multiprocessing import Process, Queue, current_process, freeze_support
+import hashlib
 
 
-def notify():
-    result = one.apply_async(args=[1, 3])
-    return result
+def work():
+    with open('F:\\tif_images\\thyroid\\more.tif', 'rb') as f:
+        md5_obj = hashlib.md5()
+        while True:
+            d = f.read(8096)
+            if not d:
+                break
+            md5_obj.update(d)
+        hash_code = md5_obj.hexdigest()
+        f.close()
+        md5 = str(hash_code).lower()
+        print(md5)
 
 
 if __name__ == '__main__':
-    result = notify()
-    print(result)
-    print(result.status)
-    print(result.id)
-    # testFl = [1, 2, 3, 4,5,6]
-    # start = time.time()
-    # for fn in testFl:
-    #     run(fn)
-    # e1 = time.time()
-    # print({'单进程': (e1 - start)})
-    # pool = Pool(6)
-    # r = pool.map(run, testFl)
-    # # 关闭不再接收线程
-    # pool.close()
-    # # 主进程阻塞等待所有子进程执行完毕
-    # pool.join()
-    # e2 = time.time()
-    #
-    # print('多进程 ' + '\t' + str((e2 - e1)))
-    # print(r)
+    work()
+
+# {'hsil':[[x1,y1,x2,y2,conf],[x1,x2],[]]}
