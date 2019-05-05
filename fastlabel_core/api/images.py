@@ -31,7 +31,7 @@ copy_annotations.add_argument('category_ids', location='json', type=list,
                               required=False, default=None, help='Categories to copy')
 image_chunk = reqparse.RequestParser()
 image_chunk.add_argument('md5', type=str, required=True)
-image_chunk.add_argument('chunk_id', type=int, required=True)
+image_chunk.add_argument('chunkNumber', type=int, required=True)
 image_chunk.add_argument('chunk_file', location='files', type=FileStorage, required=True)
 
 image_merge = reqparse.RequestParser()
@@ -126,9 +126,9 @@ class ChunkImage(Resource):
         """
         args = image_chunk.parse_args()
         md5 = args.get('md5')
-        chunk_id = args.get('chunk_id')
+        chunkNumber = args.get('chunkNumber')
         chunk_file = args.get('chunk_file')
-        file_name = '{}-{}'.format(md5, chunk_id)
+        file_name = '{}-{}'.format(md5, chunkNumber)
         if not os.path.isdir('./upload'):
             os.makedirs('./upload')
         chunk_file.save('./upload/{}'.format(file_name))
