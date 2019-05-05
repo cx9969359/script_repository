@@ -30,6 +30,14 @@ image_download.add_argument('height', type=int, required=False, default=0)
 copy_annotations = reqparse.RequestParser()
 copy_annotations.add_argument('category_ids', location='json', type=list,
                               required=False, default=None, help='Categories to copy')
+image_chunk = reqparse.RequestParser()
+image_chunk.add_argument('md5', type=str, required=True)
+image_chunk.add_argument('chunk_id', type=int, required=True)
+image_chunk.add_argument('chunk_file', location='files', type=FileStorage, required=True)
+
+image_merge = reqparse.RequestParser()
+image_merge.add_argument('file_name', type=str, required=True)
+image_merge.add_argument('md5', type=str, required=True)
 
 
 @api.route('/')
@@ -96,6 +104,54 @@ class Images(Resource):
         image.close()
         pil_image.close()
         return query_util.fix_ids(image_model)
+
+
+@api.route('/chunk')
+class ChunkImage(Resource):
+    @api.expect(image_chunk)
+    @login_required
+    def post(self):
+        """
+        接收前端上传的每一个分片
+        :return:
+        """
+        args = image_chunk.parse_args()
+        md5 = args.get('md5')
+        chunk_id = args.get('chunk_id')
+        chunk_file = args.get('chunk_file')
+        file_name = '{}-{}'.format(md5, chunk_id)
+        if not os.path.isdir('./upload'):
+            os.makedirs('./upload')
+        chunk_file.save('./upload/{}'.format(file_name))
+        return jsonify({'upload_part': True})
+
+
+@api.route('/merge-chunk')
+class MergeChunk(Resource):
+    @api.expect(image_merge)
+    @login_required
+    def post(self):
+        """
+        合并前端上传的文件
+        :return:
+        """
+        args = image_merge.parse_args()
+        fileName = args.get('file_name')
+        md5 = args.get('md5')
+        chunk = 0
+        with open('./upload/{}'.format(fileName)) as target_file:
+            while True:
+                try:
+                    file_name = './upload/{}-{}'.format(md5, chunk)
+                    source_file = open(file_name, 'rb')
+                    target_file.write(source_file.read())
+                    source_file.close()
+                except IOError:
+                    break
+                chunk += 1
+                # 删除该分片，节约资源
+                os.remove(file_name)
+        return jsonify({'upload': True})
 
 
 @api.route('/<int:image_id>')
