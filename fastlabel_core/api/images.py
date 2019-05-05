@@ -1,7 +1,6 @@
 import io
 
-from flask import jsonify
-from flask import send_file
+from flask import jsonify, send_file, request
 from flask_login import login_required
 from flask_restplus import Namespace, Resource, reqparse
 from werkzeug.datastructures import FileStorage
@@ -108,8 +107,18 @@ class Images(Resource):
 
 @api.route('/chunk')
 class ChunkImage(Resource):
+    def get(self):
+        """
+        检验该文件是否上传过
+        :return:
+        """
+        md5 = request.args.get('md5', '')
+        if not md5:
+            return {'message': 'No md5!'}, 400
+
+
     @api.expect(image_chunk)
-    @login_required
+    # @login_required
     def post(self):
         """
         接收前端上传的每一个分片
