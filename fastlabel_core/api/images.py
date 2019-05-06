@@ -128,9 +128,10 @@ class ChunkImage(Resource):
         chunkNumber = args.get('chunkNumber')
         chunk_file = args.get('file')
         file_name = '{}-{}'.format(md5, chunkNumber)
-        if not os.path.isdir('./upload'):
-            os.makedirs('./upload')
-        chunk_file.save('./upload/{}'.format(file_name))
+        upload_path = Config.WEB_UPLOAD_DIRECTORY
+        if not os.path.isdir(upload_path):
+            os.makedirs(upload_path)
+        chunk_file.save(os.path.join(upload_path, file_name))
         return jsonify({'result': 'success', 'needMerge': True, 'message': 'merge error!'})
 
 
@@ -147,18 +148,20 @@ class MergeChunk(Resource):
         fileName = args.get('file_name')
         md5 = args.get('md5')
         chunk = 1
-        with open('./upload/{}'.format(fileName), 'wb') as target_file:
+        upload_path = Config.WEB_UPLOAD_DIRECTORY
+        upload_file_path = os.path.join(upload_path, fileName)
+        with open(upload_file_path, 'wb') as target_file:
             while True:
                 try:
-                    file_name = './upload/{}-{}'.format(md5, chunk)
-                    source_file = open(file_name, 'rb')
+                    chunk_path = os.path.join(upload_path, '{}-{}'.format(md5, chunk))
+                    source_file = open(chunk_path, 'rb')
                     target_file.write(source_file.read())
                     source_file.close()
                 except IOError:
                     break
                 chunk += 1
                 # 删除该分片，节约资源
-                os.remove(file_name)
+                os.remove(chunk_path)
         return jsonify({'result': '上传成功'})
 
 

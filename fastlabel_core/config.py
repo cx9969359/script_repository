@@ -23,6 +23,9 @@ class Config:
     DATASET_DIRECTORY = os.getenv("DATASET_DIRECTORY", "/usr/share/nginx/html/tif_images/")
     INITIALIZE_FROM_FILE = os.getenv("INITIALIZE_FROM_FILE")
 
+    # 图片上传
+    WEB_UPLOAD_DIRECTORY = '/usr/share/nginx/html/web_upload/'
+
     # Coco Importer Options
     COCO_IMPORTER_VERBOSE = os.getenv("COCO_IMPORTER_VERBOSE", False)
     COCO_IMPORTER_MAX_WORKERS = int(os.getenv("COCO_IMPORTER_MAX_WORKERS", 4))
