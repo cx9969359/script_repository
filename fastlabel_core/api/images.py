@@ -112,9 +112,7 @@ class ChunkImage(Resource):
         检验该文件是否上传过
         :return:
         """
-        file_name = request.args.get('file_name', '')
-        if not file_name:
-            return {'message': 'No file_name to check file has been uploaded!'}, 400
+        file_name = request.args.get('filename', '')
         for root, dirs, files in os.walk(Config.WEB_UPLOAD_DIRECTORY):
             for file in files:
                 if file_name == file:
