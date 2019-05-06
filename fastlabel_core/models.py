@@ -126,7 +126,7 @@ class DatasetModel(db.DynamicDocument):
 
 
 class ImageModel(db.DynamicDocument):
-    PATTERN = (".gif", ".png", ".jpg", ".jpeg", ".bmp", ".tif", ".dzi", ".wsi")
+    PATTERN = (".gif", ".png", ".jpg", ".jpeg", ".bmp", ".tif", ".dzi", ".wsi", ".TIFF")
     _dataset = None
 
     id = db.SequenceField(primary_key=True)

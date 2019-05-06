@@ -9,23 +9,22 @@ import threading
 
 
 class ImageFolderHandler(FileSystemEventHandler):
-
     PREFIX = "[File Watcher]"
 
     def __init__(self, pattern=None):
-        self.pattern = pattern or (".gif", ".png", ".jpg", ".jpeg", ".bmp",".tif",".dzi",".wsi")
+        self.pattern = pattern or (".gif", ".png", ".jpg", ".jpeg", ".bmp", ".tif", ".dzi", ".wsi", ".TIFF")
 
     def on_any_event(self, event):
 
         path = event.dest_path if event.event_type == "moved" else event.src_path
         self._log(f'File {path} for {event.event_type}')
-        
+
         # Check if thumbnails directory
         folders = path.split('/')
         i = folders.index("datasets")
-        if i+1 < len(folders) and folders[i+1] == "_thumbnails":
+        if i + 1 < len(folders) and folders[i + 1] == "_thumbnails":
             return
-        
+
         if not event.is_directory and path.lower().endswith(self.pattern):
 
             image = ImageModel.objects(path=event.src_path).first()
@@ -44,6 +43,7 @@ class ImageFolderHandler(FileSystemEventHandler):
 
     def _log(self, message):
         print(f'{self.PREFIX} {message}', flush=True)
+
 
 def run_watcher():
     observer = Observer()
