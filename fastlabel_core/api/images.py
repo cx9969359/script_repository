@@ -167,10 +167,6 @@ class MergeChunk(Resource):
                 chunk += 1
                 # 删除该分片，节约资源
                 os.remove(chunk_path)
-        # 记录上传文件的md5值
-        log_path = Config.WEB_UPLOAD_LOG_DIRECTORY
-        with open(log_path, 'a') as log_file:
-            log_file.write(md5 + '\n')
         return jsonify({'result': '上传成功'})
 
 
