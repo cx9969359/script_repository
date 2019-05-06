@@ -116,7 +116,6 @@ class ChunkImage(Resource):
         if not md5:
             return {'message': 'No md5!'}, 400
 
-
     @api.expect(image_chunk)
     # @login_required
     def post(self):
@@ -132,7 +131,7 @@ class ChunkImage(Resource):
         if not os.path.isdir('./upload'):
             os.makedirs('./upload')
         chunk_file.save('./upload/{}'.format(file_name))
-        return jsonify({'upload_part': True})
+        return jsonify({'result': 'success', 'needMerge': True, 'message': 'merge error!'})
 
 
 @api.route('/merge-chunk')
@@ -147,8 +146,8 @@ class MergeChunk(Resource):
         args = image_merge.parse_args()
         fileName = args.get('file_name')
         md5 = args.get('md5')
-        chunk = 0
-        with open('./upload/{}'.format(fileName)) as target_file:
+        chunk = 1
+        with open('./upload/{}'.format(fileName), 'wb') as target_file:
             while True:
                 try:
                     file_name = './upload/{}-{}'.format(md5, chunk)
@@ -160,7 +159,7 @@ class MergeChunk(Resource):
                 chunk += 1
                 # 删除该分片，节约资源
                 os.remove(file_name)
-        return jsonify({'upload': True})
+        return jsonify({'result': '上传成功'})
 
 
 @api.route('/<int:image_id>')
