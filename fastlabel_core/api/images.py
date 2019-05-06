@@ -113,11 +113,18 @@ class ChunkImage(Resource):
         :return:
         """
         file_name = request.args.get('filename', '')
+        md5 = request.args.get('md5')
         for root, dirs, files in os.walk(Config.WEB_UPLOAD_DIRECTORY):
+            # 已上传过的分片列表
+            uploaded = []
             for file in files:
                 if file_name == file:
                     return jsonify({'has_uploaded': 1})
-        return jsonify({'has_uploaded': 0})
+                elif md5 in file:
+                    list = file.split('-')
+                    chunk_num = list[-1]
+                    uploaded.append(chunk_num)
+            return jsonify({'has_uploaded': 0, 'uploaded': uploaded})
 
     @api.expect(image_chunk)
     # @login_required
