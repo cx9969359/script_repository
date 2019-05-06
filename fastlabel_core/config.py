@@ -25,8 +25,6 @@ class Config:
 
     # 图片上传路径
     WEB_UPLOAD_DIRECTORY = '/usr/share/nginx/html/web_upload/'
-    # 记录所有上传文件的md5值
-    WEB_UPLOAD_LOG_DIRECTORY = '/usr/share/nginx/html/web_upload/file_md5.log'
 
     # Coco Importer Options
     COCO_IMPORTER_VERBOSE = os.getenv("COCO_IMPORTER_VERBOSE", False)
