@@ -118,8 +118,8 @@ class ChunkImage(Resource):
         for root, dirs, files in os.walk(Config.WEB_UPLOAD_DIRECTORY):
             for file in files:
                 if file_name == file:
-                    return jsonify({'has_uploaded': True})
-        return jsonify({'has_uploaded': False})
+                    return jsonify({'has_uploaded': 1})
+        return jsonify({'has_uploaded': 0})
 
     @api.expect(image_chunk)
     # @login_required
