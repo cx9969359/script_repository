@@ -175,6 +175,7 @@ class ImageModel(db.DynamicDocument):
                     image.dataset_id = dataset.id
 
             pattern = name_list[-1]
+            pattern = pattern.lower()
             if pattern in ("gif", "png", "jpg", "jpeg", "bmp"):
                 image.file_type = pattern
                 pil_image = Image.open(path)
@@ -192,9 +193,9 @@ class ImageModel(db.DynamicDocument):
                         image.width = child.attrib['Width']
                         image.height = child.attrib['Height']
                 return image
-            elif pattern == 'tif':
+            elif pattern in ['tif', 'tiff']:
                 from openslide import OpenSlide
-                image.file_type = 'tif'
+                image.file_type = pattern
                 slide = OpenSlide(path)
                 image.width = slide.dimensions[0]
                 image.height = slide.dimensions[1]

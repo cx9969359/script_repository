@@ -114,7 +114,14 @@ class ChunkImage(Resource):
         """
         md5 = request.args.get('md5', '')
         if not md5:
-            return {'message': 'No md5!'}, 400
+            return {'message': 'No file unique identification(MD5)!'}, 400
+        for root,dirs,files in os.walk(Config.WEB_UPLOAD_DIRECTORY):
+            for file in files:
+                file_path = os.path.join(root,file)
+
+
+
+
 
     @api.expect(image_chunk)
     # @login_required
@@ -162,6 +169,10 @@ class MergeChunk(Resource):
                 chunk += 1
                 # 删除该分片，节约资源
                 os.remove(chunk_path)
+        # 记录上传文件的md5值
+        log_path = Config.WEB_UPLOAD_LOG_DIRECTORY
+        with open(log_path, 'a') as log_file:
+            log_file.write(md5 + '\n')
         return jsonify({'result': '上传成功'})
 
 
