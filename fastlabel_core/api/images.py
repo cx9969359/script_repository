@@ -112,16 +112,14 @@ class ChunkImage(Resource):
         检验该文件是否上传过
         :return:
         """
-        md5 = request.args.get('md5', '')
-        if not md5:
-            return {'message': 'No file unique identification(MD5)!'}, 400
-        for root,dirs,files in os.walk(Config.WEB_UPLOAD_DIRECTORY):
+        file_name = request.args.get('file_name', '')
+        if not file_name:
+            return {'message': 'No file_name to check file has been uploaded!'}, 400
+        for root, dirs, files in os.walk(Config.WEB_UPLOAD_DIRECTORY):
             for file in files:
-                file_path = os.path.join(root,file)
-
-
-
-
+                if file_name == file:
+                    return jsonify({'has_uploaded': True})
+        return jsonify({'has_uploaded': False})
 
     @api.expect(image_chunk)
     # @login_required
