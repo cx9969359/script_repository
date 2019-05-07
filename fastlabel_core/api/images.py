@@ -122,7 +122,7 @@ class ChunkImage(Resource):
                     return jsonify({'has_uploaded': 1})
                 elif md5 in file:
                     list = file.split('-')
-                    chunk_num = list[-1]
+                    chunk_num = int(list[-1])
                     uploaded.append(chunk_num)
             return jsonify({'has_uploaded': 0, 'uploaded': uploaded})
         return jsonify({'has_uploaded': 0, 'uploaded': []})
