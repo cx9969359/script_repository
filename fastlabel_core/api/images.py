@@ -125,6 +125,7 @@ class ChunkImage(Resource):
                     chunk_num = list[-1]
                     uploaded.append(chunk_num)
             return jsonify({'has_uploaded': 0, 'uploaded': uploaded})
+        return jsonify({'has_uploaded': 0, 'uploaded': []})
 
     @api.expect(image_chunk)
     # @login_required
