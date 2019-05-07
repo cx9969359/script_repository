@@ -25,6 +25,8 @@ class Config:
 
     # 图片上传路径
     WEB_UPLOAD_DIRECTORY = '/usr/share/nginx/html/web_upload/'
+    # 计算机结果的bbox颜色
+    STROKE_COLOR = '#ff4500'
 
     # Coco Importer Options
     COCO_IMPORTER_VERBOSE = os.getenv("COCO_IMPORTER_VERBOSE", False)
