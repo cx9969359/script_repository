@@ -38,14 +38,13 @@ class Category(Resource):
         name = args.get('name')
         color = args.get('color')
         if CategoryModel.objects.filter(name=name).count() > 0:
-            return '该标签名已存在，请重新输入', 400
+            return jsonify('该标签名已存在，请重新输入', 400)
         try:
             category = CategoryModel(name=name, color=color)
             category.save()
         except NotUniqueError as e:
             return {'message': 'Category already exists. Check the undo tab to fully delete the category.'}, 400
-
-        return '新建成功', 200
+        return jsonify('新建成功', 200)
 
 
 @api.route('/<int:category_id>')

@@ -299,13 +299,23 @@ class DatasetDataId(Resource):
         for image in images:
             image_json = query_util.fix_ids(image)
 
-            query = AnnotationModel.objects(image_id=image.id)
+            annotation_set = AnnotationModel.objects(image_id=image.id)
+            category_list = []
+            for annotation in annotation_set:
+                if annotation.category_name not in category_list:
+                    category_list.append(annotation.category_name)
             categories = []
-            for annotation in query:
-                if annotation.category_name not in categories:
-                    categories.append(annotation.category_name)
+            for category_name in category_list:
+                category = CategoryModel.objects.filter(category_name=category_name).first()
+                obj = {}
+                obj['name'] = category_name
+                if not category:
+                    obj['color'] = '#FF0000'
+                else:
+                    obj['color'] = category.color
+                categories.append(obj)
             image_json['categories'] = categories
-            image_json['annotations'] = query.count()
+            image_json['annotations'] = annotation_set.count()
             image_json['permissions'] = image.permissions(current_user)
 
             images_json.append(image_json)
