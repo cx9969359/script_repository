@@ -292,6 +292,7 @@ class AnnotationModel(db.DynamicDocument):
 class CategoryModel(db.DynamicDocument):
     id = db.SequenceField(primary_key=True)
     name = db.StringField(required=True)
+    color = db.StringField(required=True)
     create_date = db.DateTimeField(default=datetime.datetime.now())
 
 

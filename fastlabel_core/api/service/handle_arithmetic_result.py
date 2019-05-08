@@ -25,6 +25,6 @@ def handle_result_dict(file_path, dict):
                 coordinate_list=coordinate_list,
                 key_point=coordinate_list[1],
                 bbox=bbox,
-                stroke_color=Config.STROKE_COLOR,
+                stroke_color=Config.COMPUTER_STROKE_COLOR,
             )
             annotation.save()

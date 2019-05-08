@@ -6,6 +6,7 @@ from flask_login import login_required
 from flask_restplus import Namespace, Resource, reqparse
 from werkzeug.datastructures import FileStorage
 
+from fastlabel_core import Config
 from ..models import AnnotationModel, ImageModel, CategoryModel
 
 api = Namespace('annotation', description='Annotation related operations')
@@ -220,9 +221,9 @@ class AnnotationUpload(Resource):
         # 设定标注颜色
         file_type = args.get('file_type')
         if file_type == 'manual':
-            stroke_color = '#ffff00'
+            stroke_color = Config.MANUAL_STROKE_COLOR
         else:
-            stroke_color = '#ff4500'
+            stroke_color = Config.COMPUTER_STROKE_COLOR
 
         # 解析xml标注文件
         annotation_xml_file = args.get('xml_file', '')
