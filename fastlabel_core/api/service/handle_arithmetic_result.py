@@ -17,8 +17,8 @@ def handle_result_dict(file_path, dict):
     for category, bbox_list in dict.items():
         for bbox in bbox_list:
             x_min, y_min, x_max, y_max = bbox[0], bbox[1], bbox[2], bbox[3]
-            coordinate_list = [{'x': x_min, 'y': y_min}, {'x': x_min, 'y': y_max}, {'x': x_max, 'y': y_min},
-                               {'x': x_max, 'y': y_max}]
+            coordinate_list = [{'x': x_min, 'y': y_min}, {'x': x_max, 'y': y_min}, {'x': x_max, 'y': y_max},
+                               {'x': x_min, 'y': y_max}]
             annotation = AnnotationModel(
                 image_id=image_id,
                 category_name=category,
