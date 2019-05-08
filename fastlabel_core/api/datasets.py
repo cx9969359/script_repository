@@ -306,11 +306,11 @@ class DatasetDataId(Resource):
                     category_list.append(annotation.category_name)
             categories = []
             for category_name in category_list:
-                category = CategoryModel.objects.filter(category_name=category_name).first()
+                category = CategoryModel.objects.filter(name=category_name).first()
                 obj = {}
                 obj['name'] = category_name
                 if not category:
-                    obj['color'] = '#FF0000'
+                    obj['color'] = '#FFD700'
                 else:
                     obj['color'] = category.color
                 categories.append(obj)
