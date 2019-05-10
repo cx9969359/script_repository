@@ -95,6 +95,10 @@ def get_regions_record(xml_tree, doing_list, ignore_list, regions, crop_size, cr
     print(len(regions))
 
     regions_record = pool.map(_get_record, regions)
+    for i in regions_record:
+        if i == 'useless':
+            regions_record.remove(i)
+
     print(regions_record)
     print(len(regions_record))
     return regions_record
@@ -169,14 +173,13 @@ def get_record(region, doing_list, ignore_list, objects, crop_threshold, file_po
         base_arr = fill_seg_value_by_points(base_arr, mask_arr, kernel, cen_points[0], cen_points[1])
 
     if (np.sum(mask_arr[us: us + crop_size, ls:ls + crop_size]) / (crop_size * crop_size)) <= crop_threshold:
-        return
+        return 'useless'
     print('generate regions_record')
     patch_idx = 0
     result = '{:d},{:d},{:d},{:d},{}'.format(x1, y1, x2, y2,
                                              '_' + file_postfix + '_' + str(patch_idx).zfill(
                                                  zfill_value))
     result = [x1, y1, x2, y2]
-    print(result)
     return result
 
 
