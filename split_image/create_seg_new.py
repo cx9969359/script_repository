@@ -499,6 +499,7 @@ def write_single_image(input_json_file, file_point_array_list, dest_path, palett
 
 if __name__ == '__main__':
     annotation_xml_path = '././label_xml/V201803956LSIL_2019_01_28_15_26_39.xml'
+    image_path = 'F:\\tif_images\\thyroid\\V201803956LSIL_2019_01_28_15_26_39.tif'
     output_dir = '././out_put_png'
     crop_size = 900
     overlap = 300
@@ -511,8 +512,17 @@ if __name__ == '__main__':
 
     regions_record = get_regions_record(annotation_xml_tree, doing_list, ignore_list, regions, crop_size,
                                         crop_threshold=0., file_postfix='cropped', zfill_value=12)
+    pyvips_image = pyvips.Image.new_from_file(image_path)
     for region in regions_record:
+        region = region.split(',')
+        region = [int(region[0]),int(region[1]),int(region[2]),int(region[3])]
         print(region)
+        patch = pyvips_image.extract_area(region[0], region[1], region[2], region[3])
+        img_np = vips2numpy(patch)
+        print(patch)
+
+
+
 
 
 
