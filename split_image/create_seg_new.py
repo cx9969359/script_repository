@@ -92,15 +92,8 @@ def get_regions_record(xml_tree, doing_list, ignore_list, regions, crop_size, cr
     _get_record = partial(get_record, doing_list=doing_list, ignore_list=ignore_list, objects=objects,
                           crop_threshold=crop_threshold, file_postfix=file_postfix,
                           zfill_value=zfill_value, crop_size=crop_size)
-    print(len(regions))
-
     regions_record = pool.map(_get_record, regions)
-    for i in regions_record:
-        if i == 'useless':
-            regions_record.remove(i)
-
-    print(regions_record)
-    print(len(regions_record))
+    regions_record = set(regions_record)
     return regions_record
 
 
@@ -173,13 +166,12 @@ def get_record(region, doing_list, ignore_list, objects, crop_threshold, file_po
         base_arr = fill_seg_value_by_points(base_arr, mask_arr, kernel, cen_points[0], cen_points[1])
 
     if (np.sum(mask_arr[us: us + crop_size, ls:ls + crop_size]) / (crop_size * crop_size)) <= crop_threshold:
-        return 'useless'
+        return
     print('generate regions_record')
     patch_idx = 0
     result = '{:d},{:d},{:d},{:d},{}'.format(x1, y1, x2, y2,
-                                             '_' + file_postfix + '_' + str(patch_idx).zfill(
-                                                 zfill_value))
-    result = [x1, y1, x2, y2]
+                                             '_' + file_postfix + '_' + str(patch_idx).zfill(zfill_value))
+    result = '{},{},{},{},{}'.format(x1, y1, x2, y2, single_points_array_list)
     return result
 
 
@@ -524,6 +516,9 @@ if __name__ == '__main__':
     regions_record = get_regions_record(annotation_xml_tree, doing_list, ignore_list, regions, crop_size,
                                         crop_threshold=0.,
                                         file_postfix='cropped', zfill_value=12)
+    print(regions_record)
+    for i in regions_record:
+        print(i)
     # regions_record_list, file_point_array_list = create_seg(anno_dir, output_dir, file_postfix='cropped',
     #                                                         doing_list=doing_list)
 
