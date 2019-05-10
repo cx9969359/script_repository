@@ -1,18 +1,15 @@
 import os
 import xml.etree.ElementTree as ET
-from xml.dom.minidom import Document
-
-# PIL not used in this code
-import PIL
-from PIL import Image
-# PIL 主要用于生成seg图片
-import pyvips
-import numpy as np
-import scipy.stats as st
-import imutils
-import cv2
-from multiprocessing import Pool, cpu_count
 from functools import partial
+from multiprocessing import Pool, cpu_count
+
+import cv2
+import imutils
+import numpy as np
+import pyvips
+import scipy.stats as st
+# PIL not used in this code
+from PIL import Image
 
 # map vips formats to np dtypes
 format_to_dtype = {
@@ -43,8 +40,6 @@ def scan_files_and_create_folder(input_file_path, output_seg_path, ext_list):
         new_path = os.path.join(root, '').replace('\\', '/').replace(
             os.path.join(input_file_path, '').replace('\\', '/'), os.path.join(output_seg_path, '').replace('\\', '/'),
             1)
-        # print('#### debug new_path')
-        # print(new_path)
         if not os.path.exists(new_path):
             os.makedirs(new_path)
 
@@ -93,7 +88,8 @@ def get_regions_record(xml_tree, doing_list, ignore_list, regions, crop_size, cr
                           crop_threshold=crop_threshold, file_postfix=file_postfix,
                           zfill_value=zfill_value, crop_size=crop_size)
     regions_record = pool.map(_get_record, regions)
-    regions_record = set(regions_record)
+    while None in regions_record:
+        regions_record.remove(None)
     return regions_record
 
 
@@ -171,7 +167,7 @@ def get_record(region, doing_list, ignore_list, objects, crop_threshold, file_po
     patch_idx = 0
     result = '{:d},{:d},{:d},{:d},{}'.format(x1, y1, x2, y2,
                                              '_' + file_postfix + '_' + str(patch_idx).zfill(zfill_value))
-    result = '{},{},{},{},{}'.format(x1, y1, x2, y2, single_points_array_list)
+    result = '{},{},{},{}'.format(x1, y1, x2, y2)
     return result
 
 
@@ -514,11 +510,12 @@ if __name__ == '__main__':
     regions = get_regions(image_shape, crop_size, overlap)
 
     regions_record = get_regions_record(annotation_xml_tree, doing_list, ignore_list, regions, crop_size,
-                                        crop_threshold=0.,
-                                        file_postfix='cropped', zfill_value=12)
-    print(regions_record)
-    for i in regions_record:
-        print(i)
+                                        crop_threshold=0., file_postfix='cropped', zfill_value=12)
+    for region in regions_record:
+        print(region)
+
+
+
     # regions_record_list, file_point_array_list = create_seg(anno_dir, output_dir, file_postfix='cropped',
     #                                                         doing_list=doing_list)
 

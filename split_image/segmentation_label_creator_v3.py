@@ -1,11 +1,8 @@
 import argparse
 import base64
-import copy
 import json
 import os
 import re
-import sys
-import time
 
 import cv2
 import numpy as np
