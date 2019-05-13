@@ -316,3 +316,9 @@ if __name__ == '__main__':
             save_path = os.path.join(output_dir, '{}-{}.png'.format(file_name, count))
             pil_img.save(save_path)
             count += 1
+
+            source_img = Image.fromarray(img_np)
+            source_img = source_img.convert('P')
+            blend_img = Image.blend(pil_img, source_img, 0.5)
+            save_path = os.path.join(output_dir, '{}-{}.jpeg'.format(file_name, count))
+            blend_img.save()
