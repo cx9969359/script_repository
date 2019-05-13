@@ -133,32 +133,17 @@ def get_record(region, doing_list, ignore_list, objects, crop_threshold, file_po
             keep.append(index)
 
     # base array, fill 1 for each object
-    base_arr = np.zeros((us + crop_size + ds, ls + crop_size + rs), dtype=np.float32)
     mask_arr = np.zeros((us + crop_size + ds, ls + crop_size + rs), dtype=np.float32)
 
     # draw 1 for all obj in current region
     single_points_array_list = []
     for index in keep:
         points_arr = get_all_points(objects[index])
-        # rot_box: [cen_x, cen_y, width, height, angle]
-        rot_box = get_rot_box_info(objects[index])
-        if objects[index].find('name').text.lower().strip() == 'hsil' or \
-                objects[index].find('name').text.lower().strip() == 'scc':
-            sv = 0.76
-            ev = 1.
-        else:
-            sv = 0.51
-            ev = 0.75
-        # print(rot_box)
-        kernel = get_kern(sv, ev, rot_box[2], rot_box[3], rot_box[4])
-
         points_arr = correct_points(points_arr, x1 - ls, y1 - us)
 
         single_points_array_list.append(points_arr)
 
-        cen_points = correct_points(np.asarray(rot_box[:2]), x1 - ls, y1 - us)
         mask_arr = fill_by_points(points_arr, mask_arr)
-        base_arr = fill_seg_value_by_points(base_arr, mask_arr, kernel, cen_points[0], cen_points[1])
 
     if (np.sum(mask_arr[us: us + crop_size, ls:ls + crop_size]) / (crop_size * crop_size)) <= crop_threshold:
         return
@@ -170,76 +155,11 @@ def get_record(region, doing_list, ignore_list, objects, crop_threshold, file_po
     return result
 
 
-# rotation anticlockwise
-def get_kern(sv, ev, xkernlen=20, ykernlen=10, rotate=0, xnsig=3.5, ynsig=3.5):
-    '''Returns a 2D Gaussian kernel array.'''
-
-    interval_x = (2 * xnsig + 1.) / (xkernlen)
-    interval_y = (2 * ynsig + 1.) / (ykernlen)
-
-    x = np.linspace(-xnsig - interval_x / 2., xnsig + interval_x / 2., xkernlen + 1)
-    y = np.linspace(-ynsig - interval_y / 2., ynsig + interval_y / 2., ykernlen + 1)
-
-    kern1d_x = np.diff(st.norm.cdf(x))
-
-    kern1d_y = np.diff(st.norm.cdf(y))
-
-    kernel_raw = np.sqrt(np.outer(kern1d_y, kern1d_x))
-    kernel = kernel_raw / kernel_raw.sum()
-    # print(kernel[int(ykernlen/2), int(xkernlen/2)])
-
-    # change all value in kernel
-    range_value = abs(ev - sv)
-    kernel = kernel * (range_value / kernel[int(ykernlen / 2), int(xkernlen / 2)])
-    if sv < ev:
-        symbol = 1.
-        base = sv
-    else:
-        symbol = -1.
-        base = ev
-
-    size = max(kernel.shape)
-    start_x = int(size / 2) - int(xkernlen / 2)
-    start_y = int(size / 2) - int(ykernlen / 2)
-    end_x = start_x + xkernlen
-    end_y = start_y + ykernlen
-
-    tmp_kernel = np.zeros((size, size))
-    tmp_kernel[start_y:end_y, start_x:end_x] = kernel
-
-    kernel = imutils.rotate(tmp_kernel, rotate)
-
-    kernel = kernel * symbol + base
-
-    return kernel
-
-
 def fill_by_points(points_arr, img_arr, value=(1)):
     tmp_arr = img_arr.copy()
     pts = points_arr.copy()
     pts = pts.reshape((-1, 1, 2))
     return cv2.fillPoly(tmp_arr, [pts], value)
-
-
-def fill_seg_value_by_points(base_arr, mask_arr, kernel, cen_x, cen_y):
-    height, width = base_arr.shape
-    half_kern_size = int(kernel.shape[0] / 2)
-
-    kern_x1 = cen_x - half_kern_size
-    kern_y1 = cen_y - half_kern_size
-    kern_x2 = kern_x1 + kernel.shape[0]
-    kern_y2 = kern_y1 + kernel.shape[0]
-
-    arr_x1 = max(0, kern_x1)
-    arr_y1 = max(0, kern_y1)
-    arr_x2 = min(width, kern_x2)
-    arr_y2 = min(height, kern_y2)
-
-    base_arr[arr_y1:arr_y2, arr_x1:arr_x2] = mask_arr[arr_y1:arr_y2, arr_x1:arr_x2] * \
-                                             kernel[arr_y1 - kern_y1: kernel.shape[0] - (kern_y2 - arr_y2),
-                                             arr_x1 - kern_x1: kernel.shape[0] - (kern_x2 - arr_x2)]
-
-    return base_arr
 
 
 def get_all_points(obj):
@@ -357,7 +277,7 @@ def get_label_shape_dict(palette_path, annotation_xml_tree):
 
 if __name__ == '__main__':
     annotation_xml_path = '././label_xml/V201803956LSIL_2019_01_28_15_26_39.xml'
-    image_path = 'F:\\tif_images\\thyroid\\V201803956LSIL_2019_01_28_15_26_39.tif'
+    image_path = 'F:/tif_images/thyroid/V201803956LSIL_2019_01_28_15_26_39.tif'
     output_dir = '././out_put_png'
     palette_path = './palette_folder/palette.txt'
     crop_size = 900
@@ -384,6 +304,7 @@ if __name__ == '__main__':
         ignore_label_index = 1
 
         output_mat = create_contour_image(img_np, ignore_label_index, label_shape_dict, label_list, init_type)
+        print(np.argwhere(output_mat != 0))
         check_mat = np.full(output_mat.shape, float(ignore_label_index))
 
         if np.array_equal(output_mat, check_mat):
@@ -396,3 +317,4 @@ if __name__ == '__main__':
             file_name = os.path.basename(os.path.join(annotation_xml_path)).split('.')[0]
             save_path = os.path.join(output_dir, '{}-{}.png'.format(file_name, count))
             pil_img.save(save_path)
+            count += 1
