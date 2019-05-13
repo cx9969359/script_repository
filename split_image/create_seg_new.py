@@ -8,7 +8,6 @@ import imutils
 import numpy as np
 import pyvips
 import scipy.stats as st
-# PIL not used in this code
 from PIL import Image
 
 # map vips formats to np dtypes
@@ -163,7 +162,7 @@ def get_record(region, doing_list, ignore_list, objects, crop_threshold, file_po
 
     if (np.sum(mask_arr[us: us + crop_size, ls:ls + crop_size]) / (crop_size * crop_size)) <= crop_threshold:
         return
-    print('generate regions_record')
+    # print('generate regions_record')
     patch_idx = 0
     result = '{:d},{:d},{:d},{:d},{}'.format(x1, y1, x2, y2,
                                              '_' + file_postfix + '_' + str(patch_idx).zfill(zfill_value))
@@ -202,8 +201,6 @@ def get_kern(sv, ev, xkernlen=20, ykernlen=10, rotate=0, xnsig=3.5, ynsig=3.5):
     size = max(kernel.shape)
     start_x = int(size / 2) - int(xkernlen / 2)
     start_y = int(size / 2) - int(ykernlen / 2)
-    # end_x = int(size/2)+int(xkernlen/2)
-    # end_y = int(size/2)+int(ykernlen/2)
     end_x = start_x + xkernlen
     end_y = start_y + ykernlen
 
@@ -213,8 +210,6 @@ def get_kern(sv, ev, xkernlen=20, ykernlen=10, rotate=0, xnsig=3.5, ynsig=3.5):
     kernel = imutils.rotate(tmp_kernel, rotate)
 
     kernel = kernel * symbol + base
-    # print('#####kernel_shape_debug')
-    # print(kernel.shape)
 
     return kernel
 
@@ -243,14 +238,6 @@ def fill_seg_value_by_points(base_arr, mask_arr, kernel, cen_x, cen_y):
     base_arr[arr_y1:arr_y2, arr_x1:arr_x2] = mask_arr[arr_y1:arr_y2, arr_x1:arr_x2] * \
                                              kernel[arr_y1 - kern_y1: kernel.shape[0] - (kern_y2 - arr_y2),
                                              arr_x1 - kern_x1: kernel.shape[0] - (kern_x2 - arr_x2)]
-
-    # kern_sx, kern_x1 = (0, kern_x1) if kern_x1 >= 0 else (-kern_x1, 0)
-    # kern_sy, kern_y1 = (0, kern_y1) if kern_y1 >= 0 else (-kern_y1, 0)
-    # kern_ex, kern_x2 = (half_kern_size*2, kern_x2) if kern_x2 <= width else (half_kern_size*2 - (kern_x2-width), width)
-    # kern_ey, kern_y2 = (half_kern_size*2, kern_y2) if kern_y2 <= height else (half_kern_size*2 - (kern_y2-height), height)
-
-    # base_arr[kern_y1:kern_y1+kernel.shape[0], kern_x1:kern_x1+kernel.shape[0]] = mask_arr[kern_y1:kern_y1+kernel.shape[0], kern_x1:kern_x1+kernel.shape[0]] * kernel
-    # done
 
     return base_arr
 
@@ -283,133 +270,6 @@ def correct_points(points_arr, start_x, start_y):
     return points_arr
 
 
-def process_file(file_path, anno_dir, output_dir, crop_size, overlap, crop_threshold, resize_size, file_postfix,
-                 ignore_list, doing_list, zfill_value=12):
-    anno_path = os.path.join(anno_dir, file_path).replace('\\', '/') + '.xml'
-
-    seg_prefix_path = os.path.join(output_dir, file_path).replace('\\', '/')
-
-    tree = ET.parse(anno_path)
-    img_height = int(tree.find('size').find('height').text)
-    img_width = int(tree.find('size').find('width').text)
-
-    regions = get_regions([img_height, img_width], crop_size, overlap)
-
-    objs = tree.findall('object')
-
-    obj_index_list = []
-
-    for ix, obj in enumerate(objs):
-        cls_name = obj.find('name').text.lower().strip()
-        if len(ignore_list) != 0 and cls_name in ignore_list:
-            continue
-        elif len(doing_list) != 0 and (cls_name not in doing_list):
-            continue
-        obj_index_list.append(ix)
-
-    patch_idx = 0
-    regions_record = []
-
-    for region in regions:
-        x1, y1, x2, y2 = region
-        keep = []
-
-        ls = 0
-        rs = 0
-        us = 0
-        ds = 0
-
-        for index in obj_index_list:
-            bbox = objs[index].find('bndbox')
-            bx1 = float(bbox.find('xmin').text)
-            by1 = float(bbox.find('ymin').text)
-            bx2 = float(bbox.find('xmax').text)
-            by2 = float(bbox.find('ymax').text)
-
-            ix1 = max(bx1, x1)
-            iy1 = max(by1, y1)
-            ix2 = min(bx2, x2)
-            iy2 = min(by2, y2)
-
-            w = max(0, ix2 - ix1)
-            h = max(0, iy2 - iy1)
-            inter = w * h
-
-            if inter > 0:
-                ls = int(max(max((x1 - bx1), 0), ls))
-                rs = int(max(max((bx2 - x2), 0), rs))
-                us = int(max(max((y1 - by1), 0), us))
-                ds = int(max(max((by2 - y2), 0), ds))
-
-                keep.append(index)
-
-        # base array, fill 1 for each object   
-        base_arr = np.zeros((us + crop_size + ds, ls + crop_size + rs), dtype=np.float32)
-        mask_arr = np.zeros((us + crop_size + ds, ls + crop_size + rs), dtype=np.float32)
-
-        # draw 1 for all obj in current region
-        for index in keep:
-            points_arr = get_all_points(objs[index])
-            # rot_box: [cen_x, cen_y, width, height, angle]
-            rot_box = get_rot_box_info(objs[index])
-            if objs[index].find('name').text.lower().strip() == 'hsil' or \
-                    objs[index].find('name').text.lower().strip() == 'scc':
-                sv = 0.76
-                ev = 1.
-            else:
-                sv = 0.51
-                ev = 0.75
-            # print(rot_box)
-            kernel = get_kern(sv, ev, rot_box[2], rot_box[3], rot_box[4])
-
-            points_arr = correct_points(points_arr, x1 - ls, y1 - us)
-
-            cen_points = correct_points(np.asarray(rot_box[:2]), x1 - ls, y1 - us)
-            mask_arr = fill_by_points(points_arr, mask_arr)
-            base_arr = fill_seg_value_by_points(base_arr, mask_arr, kernel, cen_points[0], cen_points[1])
-
-        # print('### debug area check')
-        # print(np.sum(mask_arr[us: us+crop_size, ls:ls+crop_size])/(crop_size*crop_size))
-
-        if (np.sum(mask_arr[us: us + crop_size, ls:ls + crop_size]) / (crop_size * crop_size)) <= crop_threshold:
-            continue
-        # base_arr = base_arr + 0.5
-        # output_seg_path = seg_prefix_path + '_' + file_postfix + '_' + str(patch_idx).zfill(zfill_value) + '.npy'
-        # print('### debug try to create')
-        # print(output_seg_path)
-        print('create file')
-        # np.save(output_seg_path, base_arr[us: us + crop_size, ls:ls + crop_size])
-        regions_record.append('{:d},{:d},{:d},{:d},{}'.format(x1, y1, x2, y2,
-                                                              '_' + file_postfix + '_' + str(patch_idx).zfill(
-                                                                  zfill_value)))
-        patch_idx += 1
-    return regions_record
-    # with open(seg_prefix_path + '_record.txt', 'w') as f:
-    #     for r in regions_record:
-    #         f.write(r + '\n')
-
-
-def create_seg(anno_dir, output_dir, crop_size=900, overlap=300, crop_threshold=0., resize_size=0, file_postfix='',
-               ignore_list=[], doing_list=[], num_process=1):
-    anno_dir = os.path.join(anno_dir, '').replace('\\', '/')
-    output_dir = os.path.join(output_dir, '').replace('\\', '/')
-
-    assert not (len(ignore_list) != 0 and len(doing_list) != 0)
-
-    file_list = scan_files_and_create_folder(anno_dir, output_dir, ['.xml'])
-
-    regions_record_list = []
-    file_point_array_list = []
-    for anno_file in file_list:
-        regions_record, point_array_list = process_file(anno_file, anno_dir, output_dir, crop_size, overlap,
-                                                        crop_threshold, resize_size,
-                                                        file_postfix,
-                                                        ignore_list, doing_list)
-        regions_record_list.append(regions_record)
-        file_point_array_list.append(point_array_list)
-    return regions_record_list, file_point_array_list
-
-
 def read_palette_file(palette_file_path):
     palette_list = [0] * (256 * 3)
     label_list = [''] * 256
@@ -432,23 +292,30 @@ def read_palette_file(palette_file_path):
     return palette_list, label_list
 
 
-def create_contour_image(img_np, all_shapes, label_shape_dict, label_list, init_type):
+def draw_single_contour_to_image(input_image, contour, color_filled, color_border=None):
+    contour = np.reshape(contour, (-1, 1, 2))
+    contour = contour.astype(np.int32)
+
+    contours = []
+    contours.append(contour)
+    cv2.drawContours(input_image, contours, -1, (color_filled), -1)
+
+    if color_border:
+        cv2.drawContours(input_image, contours, -1, (color_border), 5)
+    return input_image
+
+
+def create_contour_image(img_np, ignore_label_index, label_shape_dict, label_list, init_type):
     if init_type == 0:
         img_mat = np.full((img_np.shape[0], img_np.shape[1], 1), float(0))
     else:
         img_mat = np.full((img_np.shape[0], img_np.shape[1], 1), float(ignore_label_index))
-
-    # for i in range(len(label_list)-1):
-    #     for j in range(len(label_list[i])):
-    #         for x in label_shape_dict[label_list[i][j]]:
-    #             contour = np.asarray(all_shapes[tmp_shape_index]['points'])
-
+    # temple_format: label_shape_dict = {'lsil': [[point_list], [point_list], ...], 'hsil': []}
     for tmp_color_index in range(len(label_list) - 1):
         for tmp_label_index in range(len(label_list[tmp_color_index])):
-            for tmp_shape_index in label_shape_dict[label_list[tmp_color_index][tmp_label_index]]:
-                contour = np.asarray(all_shapes[tmp_shape_index]['points'])
+            for tmp_points_list in label_shape_dict[label_list[tmp_color_index][tmp_label_index]]:
+                contour = np.asarray(tmp_points_list)
                 draw_single_contour_to_image(img_mat, contour, (tmp_color_index), (ignore_label_index))
-
     return img_mat
 
 
@@ -463,49 +330,43 @@ def get_label_indexes(file_point_array_list, label_string):
     return index_list
 
 
-def write_single_image(input_json_file, file_point_array_list, dest_path, palette_list, label_list, init_type,
-                       regions_record_list):
+def get_label_point_list(annotation_xml_tree, label):
+    objects = annotation_xml_tree.findall('object')
+    point_list = []
+    for index, object in enumerate(objects):
+        if object.find('name').text == label:
+            points = object.find('segmentation').findall('points')
+            tuple_list = []
+            for p in points:
+                point_tuple = (float(p.find('x').text), float(p.find('y').text))
+                tuple_list.append(point_tuple)
+            point_list.append(tuple_list)
+    return point_list
+
+
+def get_label_shape_dict(palette_path, annotation_xml_tree):
+    palette_list, label_list = read_palette_file(palette_path)
+
     label_shape_dict = {}
-    for tmp_color_index in range(len(label_list)):
-        for tmp_label_index in range(len(label_list[tmp_color_index])):
-            label_shape_dict[label_list[tmp_color_index][tmp_label_index]] = get_label_indexes(file_point_array_list,
-                                                                                               label_list[
-                                                                                                   tmp_color_index][
-                                                                                                   tmp_label_index])
-    all_shapes = json_data['shapes']
-
-    # 切图
-    for region in regions_record_list[0]:
-        region = [int(region.split(',')[0]), int(region.split(',')[1]), int(region.split(',')[2]),
-                  int(region.split(',')[3])]
-        image_path = 'F:\\tif_images\\thyroid\\more.tif'
-        pyvips_image = pyvips.Image.new_from_file(image_path)
-        patch = pyvips_image.extract_area(region[0], region[1], region[2], region[3])
-        img_np = vips2numpy(patch)
-
-        output_mat = create_contour_image(img_np, all_shapes, label_shape_dict, label_list, init_type)
-
-        check_mat = np.full(output_mat.shape, float(ignore_label_index))
-
-        if np.array_equal(output_mat, check_mat):
-            print('all label ignored for file {}'.format(input_json_file))
-        else:
-            pil_mat = np.squeeze(output_mat, axis=2)
-            pil_img = Image.fromarray(pil_mat)
-            pil_img = pil_img.convert('P')
-            pil_img.putpalette(palette_list)
-            pil_img.save(dest_path)
+    for color_index in range(len(label_list)):
+        for label_index in range(len(label_list[color_index])):
+            label = label_list[color_index][label_index]
+            label_shape_dict[label] = get_label_point_list(annotation_xml_tree, label)
+    return label_shape_dict, palette_list, label_list
 
 
 if __name__ == '__main__':
     annotation_xml_path = '././label_xml/V201803956LSIL_2019_01_28_15_26_39.xml'
     image_path = 'F:\\tif_images\\thyroid\\V201803956LSIL_2019_01_28_15_26_39.tif'
     output_dir = '././out_put_png'
+    palette_path = './palette_folder/palette.txt'
     crop_size = 900
     overlap = 300
     doing_list = ['hsil', 'scc', 'lsil']
     ignore_list = []
     annotation_xml_tree = ET.parse(annotation_xml_path)
+
+    label_shape_dict, palette_list, label_list = get_label_shape_dict(palette_path, annotation_xml_tree)
 
     image_shape = get_image_shape(annotation_xml_tree)
     regions = get_regions(image_shape, crop_size, overlap)
@@ -513,29 +374,25 @@ if __name__ == '__main__':
     regions_record = get_regions_record(annotation_xml_tree, doing_list, ignore_list, regions, crop_size,
                                         crop_threshold=0., file_postfix='cropped', zfill_value=12)
     pyvips_image = pyvips.Image.new_from_file(image_path)
+    count = 0
     for region in regions_record:
         region = region.split(',')
-        region = [int(region[0]),int(region[1]),int(region[2]),int(region[3])]
-        print(region)
-        patch = pyvips_image.extract_area(region[0], region[1], region[2], region[3])
+        patch = pyvips_image.extract_area(int(region[0]), int(region[1]), int(region[2]) - int(region[0]),
+                                          int(region[3]) - int(region[1]))
         img_np = vips2numpy(patch)
-        print(patch)
+        init_type = 0
+        ignore_label_index = 1
 
+        output_mat = create_contour_image(img_np, ignore_label_index, label_shape_dict, label_list, init_type)
+        check_mat = np.full(output_mat.shape, float(ignore_label_index))
 
-
-
-
-
-    # regions_record_list, file_point_array_list = create_seg(anno_dir, output_dir, file_postfix='cropped',
-    #                                                         doing_list=doing_list)
-
-    # print(file_point_array_list)
-    # print(len(file_point_array_list))
-    # input_palette = 'F:/split_image/palette_folder/palette.txt'
-    # palette_list, label_list = read_palette_file(input_palette)
-    #
-    # dest_path = 'F:/split_image/image/a.png'
-    # init_type = 0
-    # input_json_file = ''
-    # # dest_path = re.sub(os.path.join(input_json_path, ''), os.path.join(output_png_path, ''), (os.path.splitext(json_file)[0])) + '.png'
-    # write_single_image(input_json_file, file_point_array_list, dest_path, palette_list, label_list, init_type,regions_record_list)
+        if np.array_equal(output_mat, check_mat):
+            print('all label ignored for file')
+        else:
+            pil_mat = np.squeeze(output_mat, axis=2)
+            pil_img = Image.fromarray(pil_mat)
+            pil_img = pil_img.convert('P')
+            pil_img.putpalette(palette_list)
+            file_name = os.path.basename(os.path.join(annotation_xml_path)).split('.')[0]
+            save_path = os.path.join(output_dir, '{}-{}.png'.format(file_name, count))
+            pil_img.save(save_path)
