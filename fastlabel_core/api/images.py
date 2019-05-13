@@ -1,7 +1,6 @@
 import io
 
-from flask import jsonify
-from flask import send_file
+from flask import jsonify, send_file, request
 from flask_login import login_required
 from flask_restplus import Namespace, Resource, reqparse
 from werkzeug.datastructures import FileStorage
@@ -30,6 +29,14 @@ image_download.add_argument('height', type=int, required=False, default=0)
 copy_annotations = reqparse.RequestParser()
 copy_annotations.add_argument('category_ids', location='json', type=list,
                               required=False, default=None, help='Categories to copy')
+image_chunk = reqparse.RequestParser()
+image_chunk.add_argument('md5', type=str, required=True)
+image_chunk.add_argument('chunkNumber', type=int, required=True)
+image_chunk.add_argument('file', location='files', type=FileStorage, required=True)
+
+image_merge = reqparse.RequestParser()
+image_merge.add_argument('file_name', type=str, required=True)
+image_merge.add_argument('md5', type=str, required=True)
 
 
 @api.route('/')
@@ -96,6 +103,77 @@ class Images(Resource):
         image.close()
         pil_image.close()
         return query_util.fix_ids(image_model)
+
+
+@api.route('/chunk')
+class ChunkImage(Resource):
+    def get(self):
+        """
+        检验该文件是否上传过
+        :return:
+        """
+        file_name = request.args.get('filename', '')
+        md5 = request.args.get('md5')
+        for root, dirs, files in os.walk(Config.WEB_UPLOAD_DIRECTORY):
+            # 已上传过的分片列表
+            uploaded = []
+            for file in files:
+                if file_name == file:
+                    return jsonify({'has_uploaded': 1})
+                elif md5 in file:
+                    list = file.split('-')
+                    chunk_num = int(list[-1])
+                    uploaded.append(chunk_num)
+            return jsonify({'has_uploaded': 0, 'uploaded': uploaded})
+        return jsonify({'has_uploaded': 0, 'uploaded': []})
+
+    @api.expect(image_chunk)
+    # @login_required
+    def post(self):
+        """
+        接收前端上传的每一个分片
+        :return:
+        """
+        args = image_chunk.parse_args()
+        md5 = args.get('md5')
+        chunkNumber = args.get('chunkNumber')
+        chunk_file = args.get('file')
+        file_name = '{}-{}'.format(md5, chunkNumber)
+        upload_path = Config.WEB_UPLOAD_DIRECTORY
+        if not os.path.isdir(upload_path):
+            os.makedirs(upload_path)
+        chunk_file.save(os.path.join(upload_path, file_name))
+        return jsonify({'result': 'success', 'needMerge': True, 'message': 'merge error!'})
+
+
+@api.route('/merge-chunk')
+class MergeChunk(Resource):
+    @api.expect(image_merge)
+    @login_required
+    def post(self):
+        """
+        合并前端上传的文件
+        :return:
+        """
+        args = image_merge.parse_args()
+        fileName = args.get('file_name')
+        md5 = args.get('md5')
+        chunk = 1
+        upload_path = Config.WEB_UPLOAD_DIRECTORY
+        upload_file_path = os.path.join(upload_path, fileName)
+        with open(upload_file_path, 'wb') as target_file:
+            while True:
+                try:
+                    chunk_path = os.path.join(upload_path, '{}-{}'.format(md5, chunk))
+                    source_file = open(chunk_path, 'rb')
+                    target_file.write(source_file.read())
+                    source_file.close()
+                except IOError:
+                    break
+                chunk += 1
+                # 删除该分片，节约资源
+                os.remove(chunk_path)
+        return jsonify({'result': '上传成功'})
 
 
 @api.route('/<int:image_id>')

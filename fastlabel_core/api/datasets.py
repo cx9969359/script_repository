@@ -6,6 +6,7 @@ from flask_restplus import Namespace, Resource, reqparse
 from google_images_download import google_images_download as gid
 from werkzeug.datastructures import FileStorage
 
+from fastlabel_core.util.query_util import fix_ids
 from ..models import *
 from ..util import query_util, coco_util
 from ..util.pagination_util import Pagination
@@ -16,9 +17,9 @@ dataset_create = reqparse.RequestParser()
 dataset_create.add_argument('name', required=True)
 
 page_data = reqparse.RequestParser()
+page_data.add_argument('folder', default='', help='Folder for data')
 page_data.add_argument('page', default=1, type=int)
 page_data.add_argument('limit', default=20, type=int)
-page_data.add_argument('folder', default='', help='Folder for data')
 
 delete_data = reqparse.RequestParser()
 delete_data.add_argument('fully', default=False, type=bool,
@@ -41,7 +42,8 @@ share = reqparse.RequestParser()
 share.add_argument('users', location='json', type=list, default=[], help="List of users")
 
 add_administrator = reqparse.RequestParser()
-add_administrator.add_argument('user_id', location='json', type=int, required=True, help='Add administrator to dataset')
+add_administrator.add_argument('username', location='json', type=str, required=True,
+                               help='Add administrator to dataset')
 
 
 @api.route('/')
@@ -171,44 +173,75 @@ class DatasetIdShare(Resource):
 
 @api.route('/data')
 class DatasetData(Resource):
-    @api.expect(page_data)
     @login_required
     def get(self):
-        """ Endpoint called by dataset viewer client """
+        """
+        返回当前用户可编辑查看的所有data_set
+        :return:
+        """
+        current_username = current_user.username
+        # 超级管理员可查看编辑所有data_set
+        if current_user.is_admin:
+            datasets = DatasetModel.objects.all().order_by('create_date')
+            datasets_json = []
+            for dataset in datasets:
+                dataset_json = query_util.fix_ids(dataset)
+                images = ImageModel.objects(dataset_id=dataset.id)
 
-        args = page_data.parse_args()
-        limit = args['limit']
-        page = args['page']
-        folder = args['folder']
+                dataset_json['numberImages'] = images.count()
+                dataset_json['numberAnnotated'] = images.filter(annotated=True).count()
+                dataset_json['permissions'] = dataset.permissions(current_user)
+                dataset_json['is_creator'] = 'true'
 
-        datasets = current_user.datasets.filter(deleted=False)
-        pagination = Pagination(datasets.count(), limit, page)
-        datasets = datasets[pagination.start:pagination.end]
+                first = images.first()
+                if first is not None:
+                    dataset_json['first_image_id'] = images.first().id
+                    dataset_json['first_image_name'] = images.first().file_name
+                    dataset_json['first_image_type'] = images.first().file_type
+                datasets_json.append(dataset_json)
+            return {"datasets": datasets_json}
+        else:
+            # 普通用户
+            datasets = DatasetModel.objects(creator=current_username).order_by('create_date')
 
-        datasets_json = []
-        for dataset in datasets:
-            dataset_json = query_util.fix_ids(dataset)
-            images = ImageModel.objects(dataset_id=dataset.id, deleted=False)
+            datasets_json = []
+            for dataset in datasets:
+                dataset_json = query_util.fix_ids(dataset)
+                images = ImageModel.objects(dataset_id=dataset.id)
 
-            dataset_json['numberImages'] = images.count()
-            dataset_json['numberAnnotated'] = images.filter(annotated=True).count()
-            dataset_json['permissions'] = dataset.permissions(current_user)
+                dataset_json['numberImages'] = images.count()
+                dataset_json['numberAnnotated'] = images.filter(annotated=True).count()
+                dataset_json['permissions'] = dataset.permissions(current_user)
+                dataset_json['is_creator'] = 'true'
 
-            first = images.first()
-            if first is not None:
-                dataset_json['first_image_id'] = images.first().id
-                dataset_json['first_image_name'] = images.first().file_name
-                dataset_json['first_image_type'] = images.first().file_type
-                dataset_json['first_image_prefix_path'] = images.first().prefix_path
-                dataset_json['first_image_piece_format'] = images.first().piece_format
-            datasets_json.append(dataset_json)
+                first = images.first()
+                if first is not None:
+                    dataset_json['first_image_id'] = images.first().id
+                    dataset_json['first_image_name'] = images.first().file_name
+                    dataset_json['first_image_type'] = images.first().file_type
+                datasets_json.append(dataset_json)
 
-        return {
-            "pagination": pagination.export(),
-            "folder": folder,
-            "datasets": datasets_json,
-            "categories": query_util.fix_ids(current_user.categories.filter(deleted=False).all())
-        }
+            datasets_created_by_others = DatasetModel.objects(creator__not__iexact=current_username).order_by(
+                'create_date')
+            for data_set in datasets_created_by_others:
+                can_edit_username_list = [user['username'] for user in data_set.administrator_list]
+                if current_username in can_edit_username_list:
+                    dataset_json = query_util.fix_ids(data_set)
+                    images = ImageModel.objects(dataset_id=data_set.id)
+
+                    dataset_json['numberImages'] = images.count()
+                    dataset_json['numberAnnotated'] = images.filter(annotated=True).count()
+                    dataset_json['permissions'] = data_set.permissions(current_user)
+                    dataset_json['is_creator'] = 'false'
+
+                    first = images.first()
+                    if first is not None:
+                        dataset_json['first_image_id'] = images.first().id
+                        dataset_json['first_image_name'] = images.first().file_name
+                        dataset_json['first_image_type'] = images.first().file_type
+                    datasets_json.append(dataset_json)
+
+            return {"datasets": datasets_json}
 
 
 @api.route('/<int:dataset_id>/data')
@@ -266,8 +299,23 @@ class DatasetDataId(Resource):
         for image in images:
             image_json = query_util.fix_ids(image)
 
-            query = AnnotationModel.objects(image_id=image.id)
-            image_json['annotations'] = query.count()
+            annotation_set = AnnotationModel.objects(image_id=image.id)
+            category_list = []
+            for annotation in annotation_set:
+                if annotation.category_name not in category_list:
+                    category_list.append(annotation.category_name)
+            categories = []
+            for category_name in category_list:
+                category = CategoryModel.objects.filter(name=category_name).first()
+                obj = {}
+                obj['name'] = category_name
+                if not category:
+                    obj['color'] = '#FFD700'
+                else:
+                    obj['color'] = category.color
+                categories.append(obj)
+            image_json['categories'] = categories
+            image_json['annotations'] = annotation_set.count()
             image_json['permissions'] = image.permissions(current_user)
 
             images_json.append(image_json)
@@ -325,6 +373,7 @@ class DataSetAdministration(Resource):
         dataset = DatasetModel.objects(id=dataset_id).first()
         if not dataset:
             return {'message': 'Invalid dataset ID'}, 400
+        return fix_ids(dataset)
 
     @api.expect(add_administrator)
     @login_required
@@ -332,33 +381,34 @@ class DataSetAdministration(Resource):
         dataset = DatasetModel.objects(id=dataset_id).first()
         if not dataset:
             return {'message': 'Invalid dataset ID'}, 400
-        user_id = add_administrator.parse_args().get('user_id')
-        user = UserModel.objects(id=user_id).first()
-        user_id_list = [user.id for user in dataset.administrator_list]
-        if user_id not in user_id_list:
+        username = add_administrator.parse_args().get('username')
+        user = UserModel.objects(username=username).first()
+        print(user)
+        user_name_list = [user['username'] for user in dataset.administrator_list]
+        if (username not in user_name_list) and (username != dataset.creator):
             obj = {}
-            obj['id'] = user_id
-            obj['username'] = user.username
-            obj['add_time'] = datetime.datetime.now()
+            obj['username'] = username
+            obj['add_time'] = datetime.datetime.now().strftime('%Y-%m-%d')
             dataset.administrator_list.append(obj)
-        return 'Success'
+            dataset.save()
+        return 'Add success'
 
     @login_required
     def delete(self, dataset_id):
         dataset = DatasetModel.objects(id=dataset_id).first()
         if not dataset:
             return {'message': 'Invalid dataset ID'}, 400
-        user_id = request.args.get('user_id')
-        user_id_list = [user.id for user in dataset.administrator_list]
-        if user_id not in user_id_list:
-            return {'message': 'Invalid user ID'}, 400
+        username = request.args.get('username')
+        user_username_list = [user['username'] for user in dataset.administrator_list]
+        if username not in user_username_list:
+            return {'message': 'No such an administrator of this dataset'}, 400
         else:
             for index, item in enumerate(dataset.administrator_list):
-                if item.id == user_id:
+                if item['username'] == username:
                     dataset.administrator_list.pop(index)
                     dataset.save()
                     break
-            return {'result': 'Remove success'}
+            return 'Remove success'
 
 
 @api.route('/<int:dataset_id>/scan')

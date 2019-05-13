@@ -1,0 +1,5 @@
+0 0 0
+0 250 120 scc ec met
+255 128 128 str yy normal hsil lsil
+128 255 255 agc
+128 128 128

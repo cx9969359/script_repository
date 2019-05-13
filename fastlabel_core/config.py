@@ -4,7 +4,6 @@ from .util.version_util import get_tag
 
 
 class Config:
-
     NAME = "COCO Annotator"
     VERSION = get_tag()
 
@@ -23,6 +22,13 @@ class Config:
     # Dataset Options
     DATASET_DIRECTORY = os.getenv("DATASET_DIRECTORY", "/usr/share/nginx/html/tif_images/")
     INITIALIZE_FROM_FILE = os.getenv("INITIALIZE_FROM_FILE")
+
+    # 图片上传路径
+    WEB_UPLOAD_DIRECTORY = '/usr/share/nginx/html/web_upload/'
+    # 计算机结果的bbox颜色
+    MANUAL_STROKE_COLOR = '#ffff00'
+    COMPUTER_STROKE_COLOR = '#ff4500'
+
 
     # Coco Importer Options
     COCO_IMPORTER_VERBOSE = os.getenv("COCO_IMPORTER_VERBOSE", False)

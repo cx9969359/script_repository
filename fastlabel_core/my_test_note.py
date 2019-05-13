@@ -1,25 +1,33 @@
-import datetime
-from openslide import OpenSlide,deepzoom
+import hashlib
+import time
+from openslide import OpenSlide
+from io import BytesIO
 import os
+import numpy as np
+import pyvips
+import cv2
+import xml.etree.ElementTree as ET
 
 
-class A:
-    def a(self):
-        path ='D:\\BaiduNetdiskDownload\\have.tif'
-        slide = OpenSlide(path)
-        deep_zoom = deepzoom.DeepZoomGenerator(slide, tile_size=256,overlap=1)
-        print(deep_zoom)
-        thumbnail = slide.get_thumbnail((200,500))
-        print(thumbnail)
-        file_name = 'have'
-        thumbnail_name = '%s.jpeg' % file_name
-        print(thumbnail_name)
-        # thumbnail.save('F:\\tif_images\\thyroid\\have.jpeg',format='jpeg')
+# map vips formats to np dtypes
 
-        dzi = deep_zoom.get_dzi(format='jpeg')
-        print(dzi)
+
+def work():
+    # path = 'F:/working/split_image/label_xml/V201803956LSIL_2019_01_28_15_26_39.xml'
+    # annotation_xml_tree = ET.parse(path)
+    # objects = annotation_xml_tree.findall('object')
+    # for index, object in enumerate(objects):
+    #     points = object.find('segmentation').findall('points')
+    #     tuple_list = []
+    #     for p in points:
+    #         point_tuple = (p.find('x').text, p.find('y').text)
+    #         tuple_list.append(point_tuple)
+    #     array = np.asarray(tuple_list)
+    #     print(array)
+    a = '11782.2783203125'
+    b = int(a)
+    print(b)
 
 
 if __name__ == '__main__':
-    a = A()
-    a.a()
+    work()

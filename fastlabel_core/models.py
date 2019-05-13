@@ -97,7 +97,7 @@ class DatasetModel(db.DynamicDocument):
         if user.is_admin:
             return True
 
-        return user.username.lower() == self.owner.lower()
+        return user.username.lower() == self.creator.lower()
 
     def can_download(self, user):
         return self.is_owner(user)
@@ -126,7 +126,7 @@ class DatasetModel(db.DynamicDocument):
 
 
 class ImageModel(db.DynamicDocument):
-    PATTERN = (".gif", ".png", ".jpg", ".jpeg", ".bmp", ".tif", ".dzi", ".wsi")
+    PATTERN = (".gif", ".png", ".jpg", ".jpeg", ".bmp", ".tif", ".dzi", ".wsi", ".TIFF")
     _dataset = None
 
     id = db.SequenceField(primary_key=True)
@@ -192,9 +192,9 @@ class ImageModel(db.DynamicDocument):
                         image.width = child.attrib['Width']
                         image.height = child.attrib['Height']
                 return image
-            elif pattern == 'tif':
+            elif pattern in ('tif', 'tiff', 'TIF', 'TIFF'):
                 from openslide import OpenSlide
-                image.file_type = 'tif'
+                image.file_type = pattern
                 slide = OpenSlide(path)
                 image.width = slide.dimensions[0]
                 image.height = slide.dimensions[1]
@@ -292,6 +292,7 @@ class AnnotationModel(db.DynamicDocument):
 class CategoryModel(db.DynamicDocument):
     id = db.SequenceField(primary_key=True)
     name = db.StringField(required=True)
+    color = db.StringField(default='#1AD636')
     create_date = db.DateTimeField(default=datetime.datetime.now())
 
 
