@@ -33,7 +33,6 @@ def vips2numpy(vi):
 
 def scan_files_and_create_folder(input_file_path, output_seg_path, ext_list):
     file_list = []
-
     for root, dirs, files in os.walk(input_file_path):
         # create folder if it does not exist
         new_path = os.path.join(root, '').replace('\\', '/').replace(
@@ -47,7 +46,6 @@ def scan_files_and_create_folder(input_file_path, output_seg_path, ext_list):
             if os.path.splitext(f)[1].lower() in ext_list:
                 file_list.append(os.path.splitext(os.path.join(root, f).replace('\\', '/').replace(
                     os.path.join(input_file_path, '').replace('\\', '/'), ''))[0])
-
     return file_list
 
 
@@ -136,22 +134,22 @@ def get_record(region, doing_list, ignore_list, objects, crop_threshold, file_po
     mask_arr = np.zeros((us + crop_size + ds, ls + crop_size + rs), dtype=np.float32)
 
     # draw 1 for all obj in current region
-    single_points_array_list = []
+    points_list = []
     for index in keep:
+        dict = {}
+        label = objects[index].find('name').text
         points_arr = get_all_points(objects[index])
         points_arr = correct_points(points_arr, x1 - ls, y1 - us)
         mask_arr = fill_by_points(points_arr, mask_arr)
 
-        points_list = points_arr.tolist()
-        single_points_array_list.append(points_list)
+        points = points_arr.tolist()
+        dict[label] = points
+        points_list.append(dict)
 
     if (np.sum(mask_arr[us: us + crop_size, ls:ls + crop_size]) / (crop_size * crop_size)) <= crop_threshold:
         return
     # print('generate regions_record')
-    patch_idx = 0
-    result = '{:d},{:d},{:d},{:d},{}'.format(x1, y1, x2, y2,
-                                             '_' + file_postfix + '_' + str(patch_idx).zfill(zfill_value))
-    result = '{},{},{},{},-{}'.format(x1, y1, x2, y2, single_points_array_list)
+    result = [x1, y1, x2, y2] + points_list
     return result
 
 
@@ -218,7 +216,7 @@ def draw_single_contour_to_image(input_image, contour, color_filled, color_borde
 
     contours = []
     contours.append(contour)
-    cv2.drawContours(input_image, contours, -1, (color_filled), -1)
+    cv2.drawContours(input_image, contours, -1, color_filled, -1)
 
     if color_border:
         cv2.drawContours(input_image, contours, -1, (color_border), 5)
@@ -264,30 +262,20 @@ def get_label_point_list(annotation_xml_tree, label):
     return point_list
 
 
-def get_label_shape_dict(palette_path, annotation_xml_tree):
-    palette_list, label_list = read_palette_file(palette_path)
-
-    label_shape_dict = {}
-    for color_index in range(len(label_list)):
-        for label_index in range(len(label_list[color_index])):
-            label = label_list[color_index][label_index]
-            label_shape_dict[label] = get_label_point_list(annotation_xml_tree, label)
-    return label_shape_dict, palette_list, label_list
-
-
 if __name__ == '__main__':
+
     annotation_xml_path = '././label_xml/V201803956LSIL_2019_01_28_15_26_39.xml'
     image_path = 'F:/tif_images/thyroid/V201803956LSIL_2019_01_28_15_26_39.tif'
     output_dir = '././out_put_png'
     palette_path = './palette_folder/palette.txt'
     crop_size = 900
     overlap = 300
+    ignore_label_index = 255
     doing_list = ['hsil', 'scc', 'lsil']
     ignore_list = []
     annotation_xml_tree = ET.parse(annotation_xml_path)
 
-    label_shape_dict, palette_list, label_list = get_label_shape_dict(palette_path, annotation_xml_tree)
-
+    palette_list, label_list = read_palette_file(palette_path)
     image_shape = get_image_shape(annotation_xml_tree)
     regions = get_regions(image_shape, crop_size, overlap)
 
@@ -296,25 +284,25 @@ if __name__ == '__main__':
     pyvips_image = pyvips.Image.new_from_file(image_path)
     count = 0
     for region in regions_record:
-        region_ele_list = region.split(',')
-        patch = pyvips_image.extract_area(int(region_ele_list[0]), int(region_ele_list[1]), int(region_ele_list[2]) - int(region_ele_list[0]),
-                                          int(region_ele_list[3]) - int(region_ele_list[1]))
+        patch = pyvips_image.extract_area(region[0], region[1], region[2] - region[0], region[3] - region[1])
         img_np = vips2numpy(patch)
         init_type = 0
-        ignore_label_index = 1
 
-        points_list = region.split('-')[-1]
         if init_type == 0:
             img_mat = np.full((img_np.shape[0], img_np.shape[1], 1), float(0))
         else:
             img_mat = np.full((img_np.shape[0], img_np.shape[1], 1), float(ignore_label_index))
-        for index, points in enumerate(points_list):
+
+        contour_dict = region[-1]
+        for label, points in contour_dict.items():
             contour = np.array(points)
-            print(contour)
-            draw_single_contour_to_image(img_mat, contour, (index), (ignore_label_index))
+            color_filled = (128, 128, 128)
+            for i in range(len(label_list) - 1):
+                for j in range(len(label_list[i])):
+                    if label_list[i][j] == label:
+                        img_mat = draw_single_contour_to_image(img_mat, contour, (i), (ignore_label_index))
 
         output_mat = img_mat
-        print(np.argwhere(output_mat != 0))
         check_mat = np.full(output_mat.shape, float(ignore_label_index))
 
         if np.array_equal(output_mat, check_mat):

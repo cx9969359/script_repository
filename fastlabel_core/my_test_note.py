@@ -24,10 +24,11 @@ def work():
     #         tuple_list.append(point_tuple)
     #     array = np.asarray(tuple_list)
     #     print(array)
-    a =[1,2,3]
-    b = str(a)
-    print(b)
-    print(type(b))
+    a = {'a':1}
+    for k,v in a.items():
+        print(k)
+        print(v)
+
 
 
 if __name__ == '__main__':
