@@ -24,9 +24,10 @@ def work():
     #         tuple_list.append(point_tuple)
     #     array = np.asarray(tuple_list)
     #     print(array)
-    a = '11782.2783203125'
-    b = int(a)
+    a =[1,2,3]
+    b = str(a)
     print(b)
+    print(type(b))
 
 
 if __name__ == '__main__':

@@ -140,10 +140,10 @@ def get_record(region, doing_list, ignore_list, objects, crop_threshold, file_po
     for index in keep:
         points_arr = get_all_points(objects[index])
         points_arr = correct_points(points_arr, x1 - ls, y1 - us)
-
-        single_points_array_list.append(points_arr)
-
         mask_arr = fill_by_points(points_arr, mask_arr)
+
+        points_list = points_arr.tolist()
+        single_points_array_list.append(points_list)
 
     if (np.sum(mask_arr[us: us + crop_size, ls:ls + crop_size]) / (crop_size * crop_size)) <= crop_threshold:
         return
@@ -151,7 +151,7 @@ def get_record(region, doing_list, ignore_list, objects, crop_threshold, file_po
     patch_idx = 0
     result = '{:d},{:d},{:d},{:d},{}'.format(x1, y1, x2, y2,
                                              '_' + file_postfix + '_' + str(patch_idx).zfill(zfill_value))
-    result = '{},{},{},{}'.format(x1, y1, x2, y2)
+    result = '{},{},{},{},-{}'.format(x1, y1, x2, y2, single_points_array_list)
     return result
 
 
@@ -296,14 +296,24 @@ if __name__ == '__main__':
     pyvips_image = pyvips.Image.new_from_file(image_path)
     count = 0
     for region in regions_record:
-        region = region.split(',')
-        patch = pyvips_image.extract_area(int(region[0]), int(region[1]), int(region[2]) - int(region[0]),
-                                          int(region[3]) - int(region[1]))
+        region_ele_list = region.split(',')
+        patch = pyvips_image.extract_area(int(region_ele_list[0]), int(region_ele_list[1]), int(region_ele_list[2]) - int(region_ele_list[0]),
+                                          int(region_ele_list[3]) - int(region_ele_list[1]))
         img_np = vips2numpy(patch)
         init_type = 0
         ignore_label_index = 1
 
-        output_mat = create_contour_image(img_np, ignore_label_index, label_shape_dict, label_list, init_type)
+        points_list = region.split('-')[-1]
+        if init_type == 0:
+            img_mat = np.full((img_np.shape[0], img_np.shape[1], 1), float(0))
+        else:
+            img_mat = np.full((img_np.shape[0], img_np.shape[1], 1), float(ignore_label_index))
+        for index, points in enumerate(points_list):
+            contour = np.array(points)
+            print(contour)
+            draw_single_contour_to_image(img_mat, contour, (index), (ignore_label_index))
+
+        output_mat = img_mat
         print(np.argwhere(output_mat != 0))
         check_mat = np.full(output_mat.shape, float(ignore_label_index))
 
