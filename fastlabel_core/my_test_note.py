@@ -13,22 +13,14 @@ import xml.etree.ElementTree as ET
 
 
 def work():
-    # path = 'F:/working/split_image/label_xml/V201803956LSIL_2019_01_28_15_26_39.xml'
-    # annotation_xml_tree = ET.parse(path)
-    # objects = annotation_xml_tree.findall('object')
-    # for index, object in enumerate(objects):
-    #     points = object.find('segmentation').findall('points')
-    #     tuple_list = []
-    #     for p in points:
-    #         point_tuple = (p.find('x').text, p.find('y').text)
-    #         tuple_list.append(point_tuple)
-    #     array = np.asarray(tuple_list)
-    #     print(array)
-    a = {'a': 1}
-    for k, v in a.items():
-        print(k)
-        print(v)
-
+    input_file_path = 'F:/working/split_image/label_xml'
+    file_list = []
+    for root, dirs, files in os.walk(input_file_path):
+        for f in files:
+            file_list.append(os.path.splitext(os.path.join(root, f).replace('\\', '/').replace(
+                os.path.join(input_file_path, '').replace('\\', '/'), ''))[0])
+    print(file_list)
+    return file_list
 
 if __name__ == '__main__':
     work()

@@ -4,10 +4,8 @@ from functools import partial
 from multiprocessing import Pool, cpu_count
 
 import cv2
-import imutils
 import numpy as np
 import pyvips
-import scipy.stats as st
 from PIL import Image
 
 # map vips formats to np dtypes
@@ -46,6 +44,15 @@ def scan_files_and_create_folder(input_file_path, output_seg_path, ext_list):
             if os.path.splitext(f)[1].lower() in ext_list:
                 file_list.append(os.path.splitext(os.path.join(root, f).replace('\\', '/').replace(
                     os.path.join(input_file_path, '').replace('\\', '/'), ''))[0])
+    return file_list
+
+
+def scan_xml_files_and_create_folder(input_file_path):
+    file_list = []
+    for root, dirs, files in os.walk(input_file_path):
+        for f in files:
+            file_list.append(os.path.splitext(os.path.join(root, f).replace('\\', '/').replace(
+                os.path.join(input_file_path, '').replace('\\', '/'), ''))[0])
     return file_list
 
 
@@ -263,7 +270,7 @@ def get_label_point_list(annotation_xml_tree, label):
 
 
 def generate_contour_to_draw_image(regions_record, pyvips_image, palette_list, label_list, ignore_label_index,
-                                   annotation_xml_path, output_dir):
+                                   image_name, output_dir):
     count = 0
     for region in regions_record:
         patch = pyvips_image.extract_area(region[0], region[1], region[2] - region[0], region[3] - region[1])
@@ -300,30 +307,42 @@ def generate_contour_to_draw_image(regions_record, pyvips_image, palette_list, l
             source_img = source_img.convert('RGBA')
             pil_img = pil_img.convert('RGBA')
             blend_img = Image.blend(pil_img, source_img, 0.5)
-            file_name = os.path.basename(os.path.join(annotation_xml_path)).split('.')[0]
-            save_path = os.path.join(output_dir, '{}-{}.png'.format(file_name, count))
+            save_path = os.path.join(output_dir, '{}-{}.png'.format(image_name, count))
             blend_img.save(save_path)
             count += 1
 
 
-if __name__ == '__main__':
-    annotation_xml_path = '././label_xml/V201803956LSIL_2019_01_28_15_26_39.xml'
-    image_path = 'F:/tif_images/thyroid/V201803956LSIL_2019_01_28_15_26_39.tif'
-    output_dir = '././out_put_png'
+class Config():
     palette_path = './palette_folder/palette.txt'
     crop_size = 900
     overlap = 300
     ignore_label_index = 255
     doing_list = ['hsil', 'scc', 'lsil']
     ignore_list = []
-    annotation_xml_tree = ET.parse(annotation_xml_path)
+    input_image_path = 'F:/tif_images/thyroid'
+    output_image_path = ''
+    ext_list = ['.tif']
+    input_xml_path = 'F:/working/split_image/label_xml'
 
-    palette_list, label_list = read_palette_file(palette_path)
-    image_shape = get_image_shape(annotation_xml_tree)
-    regions = get_regions(image_shape, crop_size, overlap)
 
-    regions_record = get_regions_record(annotation_xml_tree, doing_list, ignore_list, regions, crop_size,
-                                        crop_threshold=0., file_postfix='cropped', zfill_value=12)
-    pyvips_image = pyvips.Image.new_from_file(image_path)
-    generate_contour_to_draw_image(regions_record, pyvips_image, palette_list, label_list, ignore_label_index,
-                                   annotation_xml_path, output_dir)
+if __name__ == '__main__':
+    image_file_list = scan_files_and_create_folder(Config.input_image_path, Config.output_image_path, Config.ext_list)
+    xml_file_list = scan_xml_files_and_create_folder(Config.input_xml_path)
+    for image_name in image_file_list:
+        # there is an xml file belongs to this image
+        if image_name in xml_file_list:
+            image_path = os.path.join(Config.input_image_path, image_name + '.tif')
+            xml_path = os.path.join(Config.input_xml_path, image_name + '.xml')
+
+            palette_list, label_list = read_palette_file(Config.palette_path)
+
+            annotation_xml_tree = ET.parse(xml_path)
+            image_shape = get_image_shape(annotation_xml_tree)
+            regions = get_regions(image_shape, Config.crop_size, Config.overlap)
+
+            regions_record = get_regions_record(annotation_xml_tree, Config.doing_list, Config.ignore_list, regions,
+                                                Config.crop_size,
+                                                crop_threshold=0., file_postfix='cropped', zfill_value=12)
+            pyvips_image = pyvips.Image.new_from_file(image_path)
+            generate_contour_to_draw_image(regions_record, pyvips_image, palette_list, label_list,
+                                           Config.ignore_label_index, image_name, Config.output_image_path)
