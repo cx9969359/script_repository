@@ -313,16 +313,16 @@ def generate_contour_to_draw_image(regions_record, pyvips_image, palette_list, l
 
 
 class Config():
-    palette_path = './palette_folder/palette.txt'
+    input_image_path = 'F:/tif_images/thyroid'
+    input_xml_path = 'F:/working/split_image/label_xml'
+    output_image_path = 'F:/tif_images'
+    palette_path = 'F:/working/split_image/palette_folder/palette.txt'
     crop_size = 900
     overlap = 300
     ignore_label_index = 255
     doing_list = ['hsil', 'scc', 'lsil']
     ignore_list = []
-    input_image_path = 'F:/tif_images/thyroid'
-    output_image_path = ''
     ext_list = ['.tif']
-    input_xml_path = 'F:/working/split_image/label_xml'
 
 
 if __name__ == '__main__':
