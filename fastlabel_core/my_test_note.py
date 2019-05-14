@@ -3,6 +3,7 @@ import time
 from openslide import OpenSlide
 from io import BytesIO
 import os
+import argparse
 import numpy as np
 import pyvips
 import cv2
@@ -13,14 +14,11 @@ import xml.etree.ElementTree as ET
 
 
 def work():
-    input_file_path = 'F:/working/split_image/label_xml'
-    file_list = []
-    for root, dirs, files in os.walk(input_file_path):
-        for f in files:
-            file_list.append(os.path.splitext(os.path.join(root, f).replace('\\', '/').replace(
-                os.path.join(input_file_path, '').replace('\\', '/'), ''))[0])
-    print(file_list)
-    return file_list
+    parser = argparse.ArgumentParser(description='Generate tile image from annotation xml',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    input_file_path = 'F:/create_seg_config.yml'
+    args = parser.parse_args()
+    yml_file = open(args.yml_path, encoding='utf-8')
 
 if __name__ == '__main__':
     work()
