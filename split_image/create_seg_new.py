@@ -262,8 +262,51 @@ def get_label_point_list(annotation_xml_tree, label):
     return point_list
 
 
-if __name__ == '__main__':
+def generate_contour_to_draw_image(regions_record, pyvips_image, palette_list, label_list, ignore_label_index,
+                                   annotation_xml_path, output_dir):
+    count = 0
+    for region in regions_record:
+        patch = pyvips_image.extract_area(region[0], region[1], region[2] - region[0], region[3] - region[1])
+        img_np = vips2numpy(patch)
+        init_type = 0
 
+        if init_type == 0:
+            img_mat = np.full((img_np.shape[0], img_np.shape[1], 1), float(0))
+        else:
+            img_mat = np.full((img_np.shape[0], img_np.shape[1], 1), float(ignore_label_index))
+
+        contour_dict = region[-1]
+        for label, points in contour_dict.items():
+            contour = np.array(points)
+            for i in range(len(label_list) - 1):
+                for j in range(len(label_list[i])):
+                    if label_list[i][j] == label:
+                        img_mat = draw_single_contour_to_image(img_mat, contour, (i), (ignore_label_index))
+
+        output_mat = img_mat
+        check_mat = np.full(output_mat.shape, float(ignore_label_index))
+
+        if np.array_equal(output_mat, check_mat):
+            print('all label ignored for file')
+        else:
+            pil_mat = np.squeeze(output_mat, axis=2)
+            pil_img = Image.fromarray(pil_mat)
+            pil_img = pil_img.convert('P')
+            pil_img.putpalette(palette_list)
+            # file_name = os.path.basename(os.path.join(annotation_xml_path)).split('.')[0]
+            # save_path = os.path.join(output_dir, '{}-{}.png'.format(file_name, count))
+            # pil_img.save(save_path)
+            source_img = Image.fromarray(img_np)
+            source_img = source_img.convert('RGBA')
+            pil_img = pil_img.convert('RGBA')
+            blend_img = Image.blend(pil_img, source_img, 0.5)
+            file_name = os.path.basename(os.path.join(annotation_xml_path)).split('.')[0]
+            save_path = os.path.join(output_dir, '{}-{}.png'.format(file_name, count))
+            blend_img.save(save_path)
+            count += 1
+
+
+if __name__ == '__main__':
     annotation_xml_path = '././label_xml/V201803956LSIL_2019_01_28_15_26_39.xml'
     image_path = 'F:/tif_images/thyroid/V201803956LSIL_2019_01_28_15_26_39.tif'
     output_dir = '././out_put_png'
@@ -282,43 +325,5 @@ if __name__ == '__main__':
     regions_record = get_regions_record(annotation_xml_tree, doing_list, ignore_list, regions, crop_size,
                                         crop_threshold=0., file_postfix='cropped', zfill_value=12)
     pyvips_image = pyvips.Image.new_from_file(image_path)
-    count = 0
-    for region in regions_record:
-        patch = pyvips_image.extract_area(region[0], region[1], region[2] - region[0], region[3] - region[1])
-        img_np = vips2numpy(patch)
-        init_type = 0
-
-        if init_type == 0:
-            img_mat = np.full((img_np.shape[0], img_np.shape[1], 1), float(0))
-        else:
-            img_mat = np.full((img_np.shape[0], img_np.shape[1], 1), float(ignore_label_index))
-
-        contour_dict = region[-1]
-        for label, points in contour_dict.items():
-            contour = np.array(points)
-            color_filled = (128, 128, 128)
-            for i in range(len(label_list) - 1):
-                for j in range(len(label_list[i])):
-                    if label_list[i][j] == label:
-                        img_mat = draw_single_contour_to_image(img_mat, contour, (i), (ignore_label_index))
-
-        output_mat = img_mat
-        check_mat = np.full(output_mat.shape, float(ignore_label_index))
-
-        if np.array_equal(output_mat, check_mat):
-            print('all label ignored for file')
-        else:
-            pil_mat = np.squeeze(output_mat, axis=2)
-            pil_img = Image.fromarray(pil_mat)
-            pil_img = pil_img.convert('P')
-            pil_img.putpalette(palette_list)
-            file_name = os.path.basename(os.path.join(annotation_xml_path)).split('.')[0]
-            save_path = os.path.join(output_dir, '{}-{}.png'.format(file_name, count))
-            pil_img.save(save_path)
-            count += 1
-
-            source_img = Image.fromarray(img_np)
-            source_img = source_img.convert('P')
-            blend_img = Image.blend(pil_img, source_img, 0.5)
-            save_path = os.path.join(output_dir, '{}-{}.jpeg'.format(file_name, count))
-            blend_img.save()
+    generate_contour_to_draw_image(regions_record, pyvips_image, palette_list, label_list, ignore_label_index,
+                                   annotation_xml_path, output_dir)
