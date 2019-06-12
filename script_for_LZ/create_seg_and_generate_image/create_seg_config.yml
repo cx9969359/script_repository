@@ -1,0 +1,30 @@
+--input_image_path: 'F:/tif_images/thyroid'
+
+--input_xml_path: 'F:/tif_images/thyroid'
+
+--palette_path: 'F:/palette.txt'
+
+# mask_image and origin_image out put path
+--output_path: 'F:/tif_images'
+
+# belong to mask_image file name
+--postfix: '__cropped'
+
+--output_blend_image_path: 'F:/tif_images'
+
+--crop_size: 512
+
+--overlap: 256
+
+--crop_threshold: 0.05
+
+--ignore_label_index: 255
+
+--doing_list: ['hsil', 'scc', 'lsil']
+
+--ignore_list: []
+
+--ext_list: ['.tif']
+
+
+
