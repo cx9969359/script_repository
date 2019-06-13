@@ -55,9 +55,15 @@ def for_each_pickle_file(pickle_file_directory, xml_file_directory):
 
 
 def show_result(handled_list):
-    confidence_list = [i['confidence'] for i in handled_list]
-    F1_list = [i['F1'] for i in handled_list]
-    plt.plot(confidence_list, F1_list)
+    confidence_list, F1_list, precision_list, recall_list = [], [], [], []
+    for i in handled_list:
+        confidence_list.append(i['confidence'])
+        F1_list.append(i['F1'])
+        precision_list.append(i['precision'])
+        recall_list.append(i['recall'])
+    plt.plot(confidence_list, F1_list, color='g', linestyle='solid')
+    plt.plot(confidence_list, precision_list, color='r', linestyle='dashed')
+    plt.plot(confidence_list, recall_list, color='b', linestyle='dotted')
     plt.show()
 
 
@@ -89,7 +95,6 @@ def handle_result(computer_region_list, doctor_region_list):
                     if overlap >= 0.01:
                         correct_num += 1
                         break
-        print('current_correct_num', correct_num)
         TP = correct_num
         FP = len(current_region_list) - correct_num
         FN = len(doctor_region_list) - correct_num
