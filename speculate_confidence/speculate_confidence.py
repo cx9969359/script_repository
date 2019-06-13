@@ -37,33 +37,53 @@ def parse_xml(xml_path):
     return annotation_list
 
 
-def for_each_pickle_file(pickle_file_directory, xml_file_directory):
+def for_each_pickle_file(pickle_file_directory, xml_file_directory=None):
     pkl_file_list = get_pickle_file_list(pickle_file_directory)
+    # 获取所有image的置信度列表
+    all_confidence = get_all_image_region_confidence(pickle_file_directory)
+    precision_list, recall_list, F1_list = [], [], []
+    for confidence in all_confidence:
+        Total_TP, Total_FP, Total_FN = 0, 0, 0
+        for file in pkl_file_list:
+            doctor_region_list = get_doctor_regions_by_xml(xml_file_directory, file)
+            with open(os.path.join(pickle_file_directory, file), 'rb') as f:
+                result = pickle.load(f)
+                computer_region_list = []
+                for label, regions in result.items():
+                    computer_region_list += regions
+                TP, FP, FN = handle_result(computer_region_list, doctor_region_list, confidence)
+            Total_TP += TP
+            Total_FP += FP
+            Total_FN += FN
+        precision = calc_precision(Total_TP, Total_FP)
+        precision_list.append(precision)
+        recall = calc_recall(Total_TP, Total_FN)
+        recall_list.append(recall)
+        F1 = calc_F1(precision, recall)
+        F1_list.append(F1)
+    show_result(all_confidence, precision_list, recall_list, F1_list)
+
+
+def get_all_image_region_confidence(pickle_file_directory):
+    pkl_file_list = get_pickle_file_list(pickle_file_directory)
+    all_computer_region_list = []
     for file in pkl_file_list:
-        doctor_region_list = get_doctor_regions_by_xml(xml_file_directory, file)
         pickle_path = os.path.join(pickle_file_directory, file)
         with open(pickle_path, 'rb') as f:
             result = pickle.load(f)
             computer_region_list = []
-            for single_class in result:
-                regions = []
-                for key, value in single_class.items():
-                    regions += value
+            for label, regions in result.items():
                 computer_region_list += regions
-        handled_list = handle_result(computer_region_list, doctor_region_list)
-        show_result(handled_list)
+            all_computer_region_list += computer_region_list
+    all_confidence = [i[-1] for i in all_computer_region_list]
+    all_confidence = sorted(all_confidence)
+    return all_confidence
 
 
-def show_result(handled_list):
-    confidence_list, F1_list, precision_list, recall_list = [], [], [], []
-    for i in handled_list:
-        confidence_list.append(i['confidence'])
-        F1_list.append(i['F1'])
-        precision_list.append(i['precision'])
-        recall_list.append(i['recall'])
-    plt.plot(confidence_list, F1_list, color='g', linestyle='solid')
-    plt.plot(confidence_list, precision_list, color='r', linestyle='dashed')
-    plt.plot(confidence_list, recall_list, color='b', linestyle='dotted')
+def show_result(all_confidence, precision_list, recall_list, F1_list):
+    plt.plot(all_confidence, F1_list, color='g', linestyle='solid')
+    plt.plot(all_confidence, precision_list, color='r', linestyle='dashed')
+    plt.plot(all_confidence, recall_list, color='b', linestyle='dotted')
     plt.show()
 
 
@@ -76,36 +96,35 @@ def get_pickle_file_list(pickle_directory):
     return pickle_file_list
 
 
-def handle_result(computer_region_list, doctor_region_list):
+def get_correct_region_num(current_region_list, doctor_region_list):
+    correct_num = 0
+    for comp_region in current_region_list:
+        comp_region = comp_region[:-1]
+        for doctor_region in doctor_region_list:
+            # 判断是否相交
+            crossing = infer_crossing(comp_region, doctor_region)
+            if (crossing):
+                overlap = get_overlap_area(comp_region, doctor_region)
+                if overlap >= 0.01:
+                    correct_num += 1
+                    break
+    return correct_num
+
+
+def handle_result(computer_region_list, doctor_region_list, init_confidence):
     # 根据置信度排序
-    handled_list = []
-    sorted_regions_by_confidence = sorted(computer_region_list, key=lambda x: x[-1])
-    for index, region in enumerate(sorted_regions_by_confidence):
-        dict = {}
-        dict['confidence'] = region[-1]
-        current_region_list = sorted_regions_by_confidence[index:]
-        correct_num = 0
-        for comp_region in current_region_list:
-            comp_region = comp_region[:-1]
-            for doctor_region in doctor_region_list:
-                # 判断是否相交
-                crossing = infer_crossing(comp_region, doctor_region)
-                if (crossing):
-                    overlap = get_overlap_area(comp_region, doctor_region)
-                    if overlap >= 0.01:
-                        correct_num += 1
-                        break
-        TP = correct_num
-        FP = len(current_region_list) - correct_num
-        FN = len(doctor_region_list) - correct_num
-        precision = calc_precision(TP, FP)
-        recall = calc_recall(TP, FN)
-        harmmean_F1 = calc_F1(precision, recall)
-        dict['precision'] = precision
-        dict['recall'] = recall
-        dict['F1'] = harmmean_F1
-        handled_list.append(dict)
-    return handled_list
+    sorted_all_regions = sorted(computer_region_list, key=lambda x: x[-1])
+    current_region_list = []
+    for index, region in enumerate(sorted_all_regions):
+        if region[-1] >= init_confidence:
+            current_region_list = sorted_all_regions[index:]
+            break
+    correct_num = get_correct_region_num(current_region_list, doctor_region_list)
+
+    TP = correct_num
+    FP = len(current_region_list) - correct_num
+    FN = len(doctor_region_list) - correct_num
+    return TP, FP, FN
 
 
 def infer_crossing(region1, region2):
@@ -155,10 +174,12 @@ def parse_arg():
 
 
 if __name__ == '__main__':
-    args = parse_arg()
-    pickle_file_directory = args.pkl_file_directory
-    xml_file_directory = args.xml_file_directory
+    # args = parse_arg()
+    # pickle_file_directory = args.pkl_file_directory
+    pickle_file_directory = 'F:/pkl_files/test_pickles'
+    # xml_file_directory = args.xml_file_directory
     pkl_file_list = get_pickle_file_list(pickle_file_directory)
     # 求单个pickle文件
-    for_each_pickle_file(pickle_file_directory, xml_file_directory)
+    # for_each_pickle_file(pickle_file_directory, xml_file_directory)
+    for_each_pickle_file(pickle_file_directory)
     # 根据敏感度及置信度处理result
