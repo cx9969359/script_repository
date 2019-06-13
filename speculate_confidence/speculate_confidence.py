@@ -43,10 +43,11 @@ def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label
     pkl_file_list = get_pickle_file_list(pickle_file_directory)
     # 获取所有image的置信度列表
     all_confidence = get_all_image_region_confidence(pickle_file_directory, target_label)
-
+    ###############################################################################
     # 手动截取部分confidence
-    all_confidence = all_confidence[int(11 * len(all_confidence) // 12):]
+    all_confidence = all_confidence[int(21 * len(all_confidence) // 22):]
     print('confidence_length', len(all_confidence))
+    ###############################################################################
 
     precision_list, recall_list, F1_list = [], [], []
     for confidence in all_confidence:
