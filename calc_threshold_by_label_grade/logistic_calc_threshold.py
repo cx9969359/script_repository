@@ -41,7 +41,7 @@ def parse_arg():
 
 def loadDataSet():
     dataMat, labelMat = [], []
-    fr = open('F:/script_for_LZ/calc_threshold_by_label_grade/logistic_test_data.txt')
+    fr = open('F:/script_repository/calc_threshold_by_label_grade/logistic_test_data.txt')
     for line in fr.readlines():
         lineArr = line.strip().split()
         dataMat.append([1.0, float(lineArr[0]), float(lineArr[1])])  # 特征数据集，添加1是构造常数项x0
@@ -93,13 +93,21 @@ def plotBestFit(weights):
     plt.ylabel('X2')
     plt.show()
 
+def trim_sub_folder_by_sensibility(root_directory, sub_folder_list):
+    for sub_folder in sub_folder_list:
+        sub_path = os.path.join(root_directory, sub_folder)
+
+
+
 
 if __name__ == '__main__':
-    # args = parse_arg()
-    # root_directory = args.pkl_directory
-    # grade_label_list = args.grade_label_list
-    # highest_sensitivity = args.highest_sensitivity
-    # sub_folder_list = scan_pickle_sub_folder(root_directory)
+    args = parse_arg()
+    root_directory = args.pkl_directory
+    grade_label_list = args.grade_label_list
+    highest_sensitivity = args.highest_sensitivity
+    sub_folder_list = scan_pickle_sub_folder(root_directory)
+    # 根据敏感度及置信度处理result
+    trim_sub_folder_list = trim_sub_folder_by_sensibility(root_directory, sub_folder_list)
     dataMat, labelMat = loadDataSet()
     weights = gradAscent(dataMat, labelMat)
     plotBestFit(weights)
