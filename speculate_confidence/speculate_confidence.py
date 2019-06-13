@@ -104,10 +104,8 @@ def get_correct_region_num(current_region_list, doctor_region_list):
             # 判断是否相交
             crossing = infer_crossing(comp_region, doctor_region)
             if (crossing):
-                overlap = get_overlap_area(comp_region, doctor_region)
-                if overlap >= 0.01:
-                    correct_num += 1
-                    break
+                correct_num += 1
+                break
     return correct_num
 
 
@@ -140,17 +138,6 @@ def infer_crossing(region1, region2):
         return True
     else:
         return False
-
-
-def get_overlap_area(region1, region2):
-    x01, y01, x02, y02 = region1
-    x11, y11, x12, y12 = region2
-    col = min(x02, x12) - max(x01, x11)
-    row = min(y02, y12) - max(y01, y11)
-    intersection = col * row
-    area2 = (x12 - x11) * (y12 - y11)
-    overlap = intersection / area2
-    return overlap
 
 
 def calc_precision(TP, FP):
