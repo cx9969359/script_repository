@@ -61,7 +61,14 @@ def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label
         recall_list.append(recall)
         F1 = calc_F1(precision, recall)
         F1_list.append(F1)
-    show_result(all_confidence, precision_list, recall_list, F1_list, target_label)
+    result = {}
+    result['label'] = target_label
+    result['confidence_list'] = all_confidence
+    result['precision_list'] = precision_list
+    result['recall_list'] = recall_list
+    result['F1_list'] = F1_list
+    return result
+    # show_result(all_confidence, precision_list, recall_list, F1_list, target_label)
 
 
 def get_all_image_region_confidence(pickle_file_directory, label):
@@ -169,6 +176,12 @@ if __name__ == '__main__':
     pickle_file_directory = args.pkl_file_directory
     xml_file_directory = args.xml_file_directory
     label_list = args.label_list
+    label_color_dict = args.label_color_dict
     # 根据label分类
+    result_list = []
     for label in label_list:
-        for_each_pickle_file(pickle_file_directory, xml_file_directory, label)
+        result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label)
+        label_color = label_color_dict['label']
+        result_list += result
+    # 展现结果
+    show_result(result_list)

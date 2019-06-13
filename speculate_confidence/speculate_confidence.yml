@@ -1,0 +1,10 @@
+# pkl文件夹目录
+--pkl_file_directory: 'F:/test_0418_cache/image'
+
+# xml文件夹目录
+--xml_file_directory: 'F:/test_0418_cache/xml'
+
+# 标签列表
+--label_list: ['hsil', 'lsil']
+
+
