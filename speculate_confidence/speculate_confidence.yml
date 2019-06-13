@@ -1,10 +1,13 @@
 # pkl文件夹目录
---pkl_file_directory: 'F:/test_0418_cache/image'
+--pkl_file_directory: 'F:/test_0418_cache/11'
 
 # xml文件夹目录
---xml_file_directory: 'F:/test_0418_cache/xml'
+--xml_file_directory: 'F:/test_0418_cache/22'
 
 # 标签列表
---label_list: ['hsil', 'lsil']
+--label_list: ['lsil']
+
+# 标签颜色
+--label_color: {'agc': 'r', 'hsil': 'g', 'lsil': 'b'}
 
 

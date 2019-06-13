@@ -27,6 +27,7 @@ tp_array_1 = np.where(tp_array_1>0, 1, 0)
 tp_array_1 = np.sum(tp_array_1)
 print(tp_array_1)
 
+# 筛选tp
 tp_array_2 = np.sum(inter_check, axis=0)
 print(tp_array_2)
 tp_array_2 = np.where(tp_array_2>0, 1, 0)

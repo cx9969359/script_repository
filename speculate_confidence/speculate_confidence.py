@@ -43,6 +43,11 @@ def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label
     pkl_file_list = get_pickle_file_list(pickle_file_directory)
     # 获取所有image的置信度列表
     all_confidence = get_all_image_region_confidence(pickle_file_directory, target_label)
+
+    # 手动截取部分confidence
+    all_confidence = all_confidence[int(11 * len(all_confidence) // 12):]
+    print('confidence_length', len(all_confidence))
+
     precision_list, recall_list, F1_list = [], [], []
     for confidence in all_confidence:
         Total_TP, Total_FP, Total_FN = 0, 0, 0
@@ -61,7 +66,14 @@ def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label
         recall_list.append(recall)
         F1 = calc_F1(precision, recall)
         F1_list.append(F1)
-    show_result(all_confidence, precision_list, recall_list, F1_list, target_label)
+    result = {}
+    result['label'] = target_label
+    result['confidence_list'] = all_confidence
+    result['precision_list'] = precision_list
+    result['recall_list'] = recall_list
+    result['F1_list'] = F1_list
+    return result
+    # show_result(all_confidence, precision_list, recall_list, F1_list, target_label)
 
 
 def get_all_image_region_confidence(pickle_file_directory, label):
@@ -78,13 +90,20 @@ def get_all_image_region_confidence(pickle_file_directory, label):
     return all_confidence
 
 
-def show_result(all_confidence, precision_list, recall_list, F1_list, target_label):
-    plt.plot(all_confidence, F1_list, color='g', linestyle='solid', label='F1')
-    plt.plot(all_confidence, precision_list, color='r', linestyle='dashed', label='precision')
-    plt.plot(all_confidence, recall_list, color='b', linestyle='dotted', label='recall')
-    plt.xlabel('confidence')
-    plt.ylabel(target_label)
-    plt.show()
+def show_result(result_list):
+    for result in result_list:
+        label = result['label']
+        color = result['color']
+        confidence_list = result['confidence_list']
+        precision_list = result['precision_list']
+        recall_list = result['recall_list']
+        F1_list = result['F1_list']
+        plt.plot(confidence_list, F1_list, color=color, linestyle='solid', label='F1')
+        plt.plot(confidence_list, precision_list, color=color, linestyle='dashed', label='precision')
+        plt.plot(confidence_list, recall_list, color=color, linestyle='dotted', label='recall')
+        plt.xlabel('confidence')
+        plt.ylabel(label)
+        plt.show()
 
 
 def get_pickle_file_list(pickle_directory):
@@ -169,6 +188,13 @@ if __name__ == '__main__':
     pickle_file_directory = args.pkl_file_directory
     xml_file_directory = args.xml_file_directory
     label_list = args.label_list
+    label_color_dict = args.label_color
     # 根据label分类
+    result_list = []
     for label in label_list:
-        for_each_pickle_file(pickle_file_directory, xml_file_directory, label)
+        result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label)
+        label_color = label_color_dict[label]
+        result['color'] = label_color
+        result_list += result
+    # 展现结果
+    show_result(result_list)
