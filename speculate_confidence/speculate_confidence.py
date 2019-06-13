@@ -7,7 +7,7 @@ import xml.etree.cElementTree as ET
 import matplotlib.pyplot as plt
 
 
-def get_doctor_regions_by_doctor_xml(xml_file_directory, sub_folder, file):
+def get_doctor_regions_by_xml(xml_file_directory, file):
     if not os.path.isdir(xml_file_directory):
         msg = 'xml_directory ({}) is error'.format(xml_file_directory)
         raise Exception(msg)
@@ -16,41 +16,42 @@ def get_doctor_regions_by_doctor_xml(xml_file_directory, sub_folder, file):
     if xml_file_name not in xml_files:
         msg = 'No doctor_xml for {}'.format(file)
         raise Exception(msg)
-    current_label = sub_folder
-    xml_path = os.path.join(xml_file_directory, xml_file_name, current_label)
-    doctor_region_list = parse_xml(xml_path, current_label)
+    xml_path = os.path.join(xml_file_directory, xml_file_name)
+    doctor_region_list = parse_xml(xml_path)
     return doctor_region_list
 
 
-def parse_xml(xml_path, current_label):
+def parse_xml(xml_path):
     root = ET.parse(xml_path)
     objects = root.findall(root)
     annotation_list = []
     for obj in objects:
         label = obj.find('name').text
-        if label == current_label:
-            bbox_doc = obj.find('bndbox')
-            x1 = float(bbox_doc.find('xmin').text)
-            y1 = float(bbox_doc.find('ymin').text)
-            x2 = float(bbox_doc.find('xmax').text)
-            y2 = float(bbox_doc.find('ymax').text)
-            bbox = [x1, y1, x2, y2]
-            annotation_list.append(bbox)
+        bbox_doc = obj.find('bndbox')
+        x1 = float(bbox_doc.find('xmin').text)
+        y1 = float(bbox_doc.find('ymin').text)
+        x2 = float(bbox_doc.find('xmax').text)
+        y2 = float(bbox_doc.find('ymax').text)
+        bbox = [x1, y1, x2, y2]
+        annotation_list.append(bbox)
     return annotation_list
 
 
-def for_each_label(root_directory, sub_folder_list, xml_file_directory):
-    for sub_folder in sub_folder_list:
-        sub_path = os.path.join(root_directory, sub_folder)
-        single_class_pickles = get_single_class_pickles(sub_path)
-        for file in single_class_pickles:
-            doctor_region_list = get_doctor_regions_by_doctor_xml(xml_file_directory, sub_folder, file)
-            pickle_path = os.path.join(sub_path, file)
-            with open(pickle_path, 'rb') as f:
-                result = pickle.load(f)
-                computer_region_list = result[sub_folder]
-            handled_list = handle_result(computer_region_list, doctor_region_list)
-            show_result(handled_list)
+def for_each_pickle_file(pickle_file_directory, xml_file_directory):
+    pkl_file_list = get_pickle_file_list(pickle_file_directory)
+    for file in pkl_file_list:
+        doctor_region_list = get_doctor_regions_by_xml(xml_file_directory, file)
+        pickle_path = os.path.join(pickle_file_directory, file)
+        with open(pickle_path, 'rb') as f:
+            result = pickle.load(f)
+            computer_region_list = []
+            for single_class in result:
+                regions = []
+                for key, value in single_class.items():
+                    regions += value
+                computer_region_list += regions
+        handled_list = handle_result(computer_region_list, doctor_region_list)
+        show_result(handled_list)
 
 
 def show_result(handled_list):
@@ -60,24 +61,24 @@ def show_result(handled_list):
     plt.show()
 
 
-def get_single_class_pickles(sub_folder_path):
-    single_class_pickles = []
-    for root, dirs, files in os.walk(sub_folder_path):
+def get_pickle_file_list(pickle_directory):
+    pickle_file_list = []
+    for root, dirs, files in os.walk(pickle_directory):
         for file in files:
             if file.split('.')[-1].lower() == 'pkl':
-                single_class_pickles.append(file)
-    return single_class_pickles
+                pickle_file_list.append(file)
+    return pickle_file_list
 
 
 def handle_result(computer_region_list, doctor_region_list):
     # 根据置信度排序
     handled_list = []
-    sorted_label_list = sorted(computer_region_list, key=lambda x: x[-1])
-    for index, region in enumerate(sorted_label_list):
+    sorted_regions_by_confidence = sorted(computer_region_list, key=lambda x: x[-1])
+    for index, region in enumerate(sorted_regions_by_confidence):
         dict = {}
         dict['confidence'] = region[-1]
-        current_region_list = sorted_label_list[index:]
-        correct_region_num = 0
+        current_region_list = sorted_regions_by_confidence[index:]
+        correct_num = 0
         for comp_region in current_region_list:
             comp_region = comp_region[:-1]
             for doctor_region in doctor_region_list:
@@ -86,12 +87,12 @@ def handle_result(computer_region_list, doctor_region_list):
                 if (crossing):
                     overlap = get_overlap_area(comp_region, doctor_region)
                     if overlap >= 0.01:
-                        correct_region_num += 1
+                        correct_num += 1
                         break
-        print('current_correct_region_num', correct_region_num)
-        TP = correct_region_num
-        FP = len(current_region_list) - correct_region_num
-        FN = len(doctor_region_list) - correct_region_num
+        print('current_correct_num', correct_num)
+        TP = correct_num
+        FP = len(current_region_list) - correct_num
+        FN = len(doctor_region_list) - correct_num
         precision = calc_precision(TP, FP)
         recall = calc_recall(TP, FN)
         harmmean_F1 = calc_F1(precision, recall)
@@ -150,9 +151,9 @@ def parse_arg():
 
 if __name__ == '__main__':
     args = parse_arg()
-    root_directory = args.pkl_file_directory
+    pickle_file_directory = args.pkl_file_directory
     xml_file_directory = args.xml_file_directory
-    sub_folder_list = os.listdir(os.path.join(root_directory))
-    # 根据每一类求其相关值
-    for_each_label(root_directory, sub_folder_list, xml_file_directory)
+    pkl_file_list = get_pickle_file_list(pickle_file_directory)
+    # 求单个pickle文件
+    for_each_pickle_file(pickle_file_directory, xml_file_directory)
     # 根据敏感度及置信度处理result
