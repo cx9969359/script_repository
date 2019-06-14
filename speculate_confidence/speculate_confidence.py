@@ -41,30 +41,36 @@ def get_all_xml_regions_of_target_label(xml_file_directory, target_label):
     return dict
 
 
+def calc_pre_recall_F1_by_fixed_conf(confidence, pkl_file_list, doctor_regions_dict, target_label):
+    Total_TP1, Total_TP2, Total_FP, Total_FN = 0, 0, 0, 0
+    for file in pkl_file_list:
+        file_name = file.split('.')[0]
+        try:
+            doctor_region_list = doctor_regions_dict[file_name]
+        except KeyError:
+            msg = 'No {} doctor xml'.format(file_name)
+            raise Exception(msg)
+        with open(os.path.join(pickle_file_directory, file), 'rb') as f:
+            result = pickle.load(f)
+            computer_region_list = result[target_label]
+            TP1, TP2, FP, FN = handle_result(computer_region_list, doctor_region_list, confidence)
+        Total_TP1 += TP1
+        Total_TP2 += TP2
+        Total_FP += FP
+        Total_FN += FN
+    precision = calc_precision(Total_TP1, Total_FP)
+    recall = calc_recall(Total_TP2, Total_FN)
+    F1 = calc_F1(precision, recall)
+    return precision, recall, F1
+
+
 def get_precisions_recalls_F1s_by_confidences(sorted_confidence_list, pkl_file_list, doctor_regions_dict, target_label):
     precision_list, recall_list, F1_list = [], [], []
     for confidence in sorted_confidence_list:
-        Total_TP1, Total_TP2, Total_FP, Total_FN = 0, 0, 0, 0
-        for file in pkl_file_list:
-            file_name = file.split('.')[0]
-            try:
-                doctor_region_list = doctor_regions_dict[file_name]
-            except KeyError:
-                msg = 'No {} doctor xml'.format(file_name)
-                raise Exception(msg)
-            with open(os.path.join(pickle_file_directory, file), 'rb') as f:
-                result = pickle.load(f)
-                computer_region_list = result[target_label]
-                TP1, TP2, FP, FN = handle_result(computer_region_list, doctor_region_list, confidence)
-            Total_TP1 += TP1
-            Total_TP2 += TP2
-            Total_FP += FP
-            Total_FN += FN
-        precision = calc_precision(Total_TP1, Total_FP)
+        precision, recall, F1 = calc_pre_recall_F1_by_fixed_conf(confidence, pkl_file_list, doctor_regions_dict,
+                                                                 target_label)
         precision_list.append(precision)
-        recall = calc_recall(Total_TP2, Total_FN)
         recall_list.append(recall)
-        F1 = calc_F1(precision, recall)
         F1_list.append(F1)
     return precision_list, recall_list, F1_list
 
