@@ -294,6 +294,20 @@ def save_cache_as_pkl(save_directory, result, label):
             pickle.dump(result, f)
 
 
+def calc_ap_by_precision_recall(result):
+    precision_list = result['precision_list']
+    recall_list = result['recall_list']
+    mrec = np.concatenate(([0.], precision_list, [1.]))
+    mpre = np.concatenate(([0.], recall_list, [0.]))
+    for i in range(mpre.size - 1, 0, -1):
+        mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
+    i = np.where(mrec[1:] != mrec[:-1])[0]
+
+    # sum (\delta recall) * prec
+    ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
+    return ap
+
+
 def parse_arg():
     parser = argparse.ArgumentParser()
     parser.add_argument('yml_path', type=str, help='path to pkl_files')
@@ -336,7 +350,8 @@ if __name__ == '__main__':
             result['color'] = label_color
             save_cache_as_pkl(args.save_cache_directory, result, label)
         result_list.append(result)
-
+        ap = calc_ap_by_precision_recall(result)
+        print('ap值   {}: {}'.format(label, ap))
     # 展现结果
     show_image = args.show_image
     output_image_path = args.output_image_path
