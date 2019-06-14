@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
+OFFSET = 1e-8
+
 
 def parse_xml(xml_path, target_label):
     root = ET.parse(xml_path)
@@ -83,8 +85,8 @@ def get_precisions_recalls_F1s_by_confidences(sorted_confidence_list, pickle_fil
     precision_list, recall_list, F1_list = [], [], []
     for i in precision_recall_F1_list:
         precision_list.append(i[0])
-        precision_list.append(i[1])
-        precision_list.append(i[2])
+        recall_list.append(i[1])
+        F1_list.append(i[2])
     return precision_list, recall_list, F1_list
 
 
@@ -95,7 +97,7 @@ def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label
     ###############################################################################
     # 截取部分confidence在0.6以上的部分
     sorted_confidence_list = np.array(sorted_confidence_list)
-    sorted_confidence_list = sorted_confidence_list[sorted_confidence_list >= 0.9]
+    sorted_confidence_list = sorted_confidence_list[sorted_confidence_list >= 0.985]
     print('confidence_length', len(sorted_confidence_list))
     ###############################################################################
 
@@ -134,19 +136,19 @@ def get_all_image_region_confidence(pickle_file_directory, label):
 
 
 def show_result(result_list):
+    plt.figure(figsize=(12, 6))
     for result in result_list:
-        label = result['label']
         color = result['color']
         confidence_list = result['confidence_list']
         precision_list = result['precision_list']
         recall_list = result['recall_list']
         F1_list = result['F1_list']
+
         plt.plot(confidence_list, F1_list, color=color, linestyle='solid', label='F1')
         plt.plot(confidence_list, precision_list, color=color, linestyle='dashed', label='precision')
         plt.plot(confidence_list, recall_list, color=color, linestyle='dotted', label='recall')
-        plt.xlabel('confidence')
-        plt.ylabel(label)
-        plt.show()
+    plt.xlabel('confidence')
+    plt.show()
 
 
 def get_pickle_file_list(pickle_directory):
@@ -159,6 +161,17 @@ def get_pickle_file_list(pickle_directory):
 
 
 def get_coincide_region_num(current_region_list, doctor_region_list):
+    if len(doctor_region_list) == 0 and len(current_region_list) != 0:
+        TP1, TP2, FN = 0, 0, 0
+        FP = len(current_region_list) - 0
+        return TP1, TP2, FP, FN
+    if (len(doctor_region_list), len(current_region_list)) == (0, 0):
+        return 0, 0, 0, 0
+    if len(doctor_region_list) != 0 and len(current_region_list) == 0:
+        TP1, TP2, FP = 0, 0, 0
+        FN = len(doctor_region_list)
+        return TP1, TP2, FP, FN
+
     gt_bbox = np.array(doctor_region_list)
     mc_bbox = np.array(current_region_list).reshape((-1, 1, 5))[:, :, :4]
     xmin = np.maximum(gt_bbox[:, 0], mc_bbox[:, :, 0])
@@ -194,19 +207,15 @@ def handle_result(computer_region_list, doctor_region_list, init_confidence):
 
 
 def calc_precision(TP, FP):
-    return float('%.4f' % (TP / (TP + FP)))
+    return float('%.4f' % (TP / (TP + FP + OFFSET)))
 
 
 def calc_recall(TP, FN):
-    return float('%.4f' % (TP / (TP + FN)))
+    return float('%.4f' % (TP / (TP + FN + OFFSET)))
 
 
 def calc_F1(P, R):
-    try:
-        F1 = float('%.4f' % (2 * P * R / (P + R)))
-        return F1
-    except ZeroDivisionError:
-        return 0
+    return float('%.4f' % (2 * P * R / (P + R + OFFSET)))
 
 
 def parse_arg():

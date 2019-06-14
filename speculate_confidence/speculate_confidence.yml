@@ -5,9 +5,9 @@
 --xml_file_directory: 'F:/test_0418_cache/22'
 
 # 标签列表
---label_list: ['lsil']
+--label_list: ['hsil','lsil']
 
 # 标签颜色
---label_color: {'agc': 'r', 'hsil': 'g', 'lsil': 'r'}
+--label_color: {'agc': 'b', 'hsil': 'g', 'lsil': 'r'}
 
 
