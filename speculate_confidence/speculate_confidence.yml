@@ -14,7 +14,7 @@
 --save_cache_directory: 'F:/test_0418_cache'
 
 # 读取cache文件的路径
---input_cache_directory: ''
+--input_cache_directory: 'F:/test_0418_cache'
 
 
 # 标签列表,default_format: [[label_group1], [label_group2], ...]

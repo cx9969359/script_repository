@@ -327,6 +327,7 @@ if __name__ == '__main__':
         if input_cache_directory and ((label + '.pkl') in os.listdir(input_cache_directory)):
             file_path = os.path.join(input_cache_directory, label + '.pkl')
             with open(file_path, 'rb') as f:
+                print('读取{}.pkl'.format(label))
                 result = pickle.load(f)
         # 计算result
         else:
