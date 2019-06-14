@@ -5,21 +5,8 @@ import pickle
 import xml.etree.cElementTree as ET
 
 import matplotlib.pyplot as plt
+import numpy as np
 import yaml
-
-
-def get_doctor_regions_by_xml(xml_file_directory, file, target_label):
-    if not os.path.isdir(xml_file_directory):
-        msg = 'xml_directory ({}) is error'.format(xml_file_directory)
-        raise Exception(msg)
-    xml_file_name = file.split('.')[0] + '.xml'
-    xml_files = os.listdir(xml_file_directory)
-    if xml_file_name not in xml_files:
-        msg = 'No doctor_xml for {}'.format(file)
-        raise Exception(msg)
-    xml_path = os.path.join(xml_file_directory, xml_file_name)
-    doctor_region_list = parse_xml(xml_path, target_label)
-    return doctor_region_list
 
 
 def parse_xml(xml_path, target_label):
@@ -39,42 +26,66 @@ def parse_xml(xml_path, target_label):
     return annotation_list
 
 
+def get_all_xml_regions_of_target_label(xml_file_directory, target_label):
+    file_list = os.listdir(xml_file_directory)
+    xml_file_list = []
+    for file in file_list:
+        if file.split('.')[-1].lower() == 'xml':
+            xml_file_list.append(file)
+    dict = {}
+    for xml_file in xml_file_list:
+        xml_path = os.path.join(xml_file_directory, xml_file)
+        regions = parse_xml(xml_path, target_label)
+        file_name = xml_file.split('.')[0]
+        dict[file_name] = regions
+    return dict
+
+
 def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label):
     pkl_file_list = get_pickle_file_list(pickle_file_directory)
     # 获取所有image的置信度列表
-    all_confidence = get_all_image_region_confidence(pickle_file_directory, target_label)
+    sorted_confidence_list = get_all_image_region_confidence(pickle_file_directory, target_label)
     ###############################################################################
-    # 手动截取部分confidence
-    all_confidence = all_confidence[int(21 * len(all_confidence) // 22):]
-    print('confidence_length', len(all_confidence))
+    # 截取部分confidence在0.6以上的部分
+    sorted_confidence_list = np.array(sorted_confidence_list)
+    sorted_confidence_list = sorted_confidence_list[sorted_confidence_list >= 0.985]
+    print('confidence_length', len(sorted_confidence_list))
     ###############################################################################
 
+    # 先将所有的doctor_xml文件中target_label对应的regions整理成字典{'file1': [], 'file2': [], ...}
+    all_doctor_xml_regions_for_single_label = get_all_xml_regions_of_target_label(xml_file_directory, target_label)
+
     precision_list, recall_list, F1_list = [], [], []
-    for confidence in all_confidence:
-        Total_TP, Total_FP, Total_FN = 0, 0, 0
+    for confidence in sorted_confidence_list:
+        Total_TP1, Total_TP2, Total_FP, Total_FN = 0, 0, 0, 0
         for file in pkl_file_list:
-            doctor_region_list = get_doctor_regions_by_xml(xml_file_directory, file, target_label)
+            file_name = file.split('.')[0]
+            try:
+                doctor_region_list = all_doctor_xml_regions_for_single_label[file_name]
+            except KeyError:
+                msg = 'No {} doctor xml'.format(file_name)
+                raise Exception(msg)
             with open(os.path.join(pickle_file_directory, file), 'rb') as f:
                 result = pickle.load(f)
                 computer_region_list = result[target_label]
-                TP, FP, FN = handle_result(computer_region_list, doctor_region_list, confidence)
-            Total_TP += TP
+                TP1, TP2, FP, FN = handle_result(computer_region_list, doctor_region_list, confidence)
+            Total_TP1 += TP1
+            Total_TP2 += TP2
             Total_FP += FP
             Total_FN += FN
-        precision = calc_precision(Total_TP, Total_FP)
+        precision = calc_precision(Total_TP1, Total_FP)
         precision_list.append(precision)
-        recall = calc_recall(Total_TP, Total_FN)
+        recall = calc_recall(Total_TP2, Total_FN)
         recall_list.append(recall)
         F1 = calc_F1(precision, recall)
         F1_list.append(F1)
-    result = {}
-    result['label'] = target_label
-    result['confidence_list'] = all_confidence
-    result['precision_list'] = precision_list
-    result['recall_list'] = recall_list
-    result['F1_list'] = F1_list
-    return result
-    # show_result(all_confidence, precision_list, recall_list, F1_list, target_label)
+    result_dict = {}
+    result_dict['label'] = target_label
+    result_dict['confidence_list'] = sorted_confidence_list
+    result_dict['precision_list'] = precision_list
+    result_dict['recall_list'] = recall_list
+    result_dict['F1_list'] = F1_list
+    return result_dict
 
 
 def get_all_image_region_confidence(pickle_file_directory, label):
@@ -116,17 +127,27 @@ def get_pickle_file_list(pickle_directory):
     return pickle_file_list
 
 
-def get_correct_region_num(current_region_list, doctor_region_list):
-    correct_num = 0
-    for comp_region in current_region_list:
-        comp_region = comp_region[:-1]
-        for doctor_region in doctor_region_list:
-            # 判断是否相交
-            crossing = infer_crossing(comp_region, doctor_region)
-            if (crossing):
-                correct_num += 1
-                break
-    return correct_num
+def get_coincide_region_num(current_region_list, doctor_region_list):
+    gt_bbox = np.array(doctor_region_list)
+    mc_bbox = np.array(current_region_list).reshape((-1, 1, 5))[:, :, :4]
+    xmin = np.maximum(gt_bbox[:, 0], mc_bbox[:, :, 0])
+    ymin = np.maximum(gt_bbox[:, 1], mc_bbox[:, :, 1])
+    xmax = np.minimum(gt_bbox[:, 2], mc_bbox[:, :, 2])
+    ymax = np.minimum(gt_bbox[:, 3], mc_bbox[:, :, 3])
+    w = np.maximum(xmax - xmin, 0.)
+    h = np.maximum(ymax - ymin, 0.)
+    inter = w * h
+    inter_check = np.where(inter > 0, 1, 0)
+    tp_array_1 = np.sum(inter_check, axis=1)
+    tp_array_1 = np.where(tp_array_1 > 0, 1, 0)
+    TP1 = np.sum(tp_array_1)
+
+    TP2 = np.sum(inter_check, axis=0)
+    TP2 = np.where(TP2 > 0, 1, 0)
+    TP2 = np.sum(TP2)
+    FP = len(current_region_list) - TP1
+    FN = len(doctor_region_list) - TP2
+    return TP1, TP2, FP, FN
 
 
 def handle_result(computer_region_list, doctor_region_list, init_confidence):
@@ -137,27 +158,8 @@ def handle_result(computer_region_list, doctor_region_list, init_confidence):
         if region[-1] >= init_confidence:
             current_region_list = sorted_all_regions[index:]
             break
-    correct_num = get_correct_region_num(current_region_list, doctor_region_list)
-
-    TP = correct_num
-    FP = len(current_region_list) - correct_num
-    FN = len(doctor_region_list) - correct_num
-    return TP, FP, FN
-
-
-def infer_crossing(region1, region2):
-    x01, y01, x02, y02 = region1
-    x11, y11, x12, y12 = region2
-    lx = abs((x01 + x02) / 2 - (x11 + x12) / 2)
-    ly = abs((y01 + y02) / 2 - (y11 + y12) / 2)
-    sax = abs(x01 - x02)
-    sbx = abs(x11 - x12)
-    say = abs(y01 - y02)
-    sby = abs(y11 - y12)
-    if lx <= (sax + sbx) / 2 and ly <= (say + sby) / 2:
-        return True
-    else:
-        return False
+    TP1, TP2, FP, FN = get_coincide_region_num(current_region_list, doctor_region_list)
+    return TP1, TP2, FP, FN
 
 
 def calc_precision(TP, FP):
@@ -169,7 +171,11 @@ def calc_recall(TP, FN):
 
 
 def calc_F1(P, R):
-    return float('%.4f' % (2 * P * R / (P + R)))
+    try:
+        F1 = float('%.4f' % (2 * P * R / (P + R)))
+        return F1
+    except ZeroDivisionError:
+        return 0
 
 
 def parse_arg():
@@ -196,6 +202,6 @@ if __name__ == '__main__':
         result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label)
         label_color = label_color_dict[label]
         result['color'] = label_color
-        result_list += result
+        result_list.append(result)
     # 展现结果
     show_result(result_list)
