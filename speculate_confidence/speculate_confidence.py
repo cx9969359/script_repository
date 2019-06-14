@@ -2,6 +2,7 @@
 import argparse
 import os
 import pickle
+import random
 import time
 import xml.etree.cElementTree as ET
 from functools import partial
@@ -135,31 +136,36 @@ def get_all_image_region_confidence(pickle_file_directory, label):
     return all_confidence
 
 
-def show_result(show_image, result_list, output_image_path):
-    plt.figure(figsize=(12, 6))
-    for result in result_list:
-        color = result['color']
-        confidence_list = result['confidence_list']
-        precision_list = result['precision_list']
-        recall_list = result['recall_list']
-        F1_list = result['F1_list']
-        label = result['label']
-        f1_label = label + ': F1'
-        precision_label = label + ': precision'
-        recall_label = label + ': recall'
-        plt.plot(confidence_list, precision_list, color=color, linestyle='solid', label=precision_label)
-        plt.plot(confidence_list, recall_list, color=color, linestyle='dotted', label=recall_label)
-        plt.plot(confidence_list, F1_list, color=color, linestyle='-.', label=f1_label)
-    plt.xlabel('confidence')
-    plt.yticks(np.arange(0, 1, 0.05))
-    plt.legend(loc=0)
-
-    if (show_image):
-        plt.show()
-    else:
-        file_name = '{}.png'.format(int(time.time()))
-        save_path = os.path.join(output_image_path, file_name)
-        plt.savefig(save_path, dpi=300)
+def show_result(show_image, result_list, label_group, output_image_path):
+    # 每一个label_group一个图形
+    for group in label_group:
+        plt.figure(figsize=(12, 6))
+        plt.xlabel('confidence')
+        plt.yticks(np.arange(0, 1, 0.05))
+        plt.legend(loc=0)
+        for label in group:
+            result = {}
+            for i in result_list:
+                if i['label'] == label:
+                    result = i
+                    break
+            if not result:
+                continue
+            f1_label = result['label'] + ': F1'
+            precision_label = result['label'] + ': precision'
+            recall_label = result['label'] + ': recall'
+            plt.plot(result['confidence_list'], result['precision_list'], color=result['color'], linestyle='solid',
+                     label=precision_label)
+            plt.plot(result['confidence_list'], result['recall_list'], color=result['color'], linestyle='dotted',
+                     label=recall_label)
+            plt.plot(result['confidence_list'], result['F1_list'], color=result['color'], linestyle='-.',
+                     label=f1_label)
+        if (show_image):
+            plt.show()
+        else:
+            file_name = '{}.png'.format(int(time.time()) + random.random())
+            save_path = os.path.join(output_image_path, file_name)
+            plt.savefig(save_path, dpi=300)
 
 
 def get_pickle_file_list(pickle_directory):
@@ -267,4 +273,4 @@ if __name__ == '__main__':
     # 展现结果
     show_image = args.show_image
     output_image_path = args.output_image_path
-    show_result(show_image, result_list, output_image_path)
+    show_result(show_image, result_list, label_group, output_image_path)
