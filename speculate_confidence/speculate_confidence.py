@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
+import datetime
 import os
 import pickle
 import random
@@ -164,7 +165,8 @@ def show_result(show_image, result_list, label_group, output_image_path):
         if (show_image):
             plt.show()
         else:
-            file_name = '{}.png'.format(int(time.time()) + random.random())
+            date = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+            file_name = '{}-{}.png'.format(date, random.random())
             save_path = os.path.join(output_image_path, file_name)
             plt.savefig(save_path, dpi=300)
 
@@ -257,7 +259,8 @@ def get_all_pkl_label(pickle_file_directory, pkl_file_list):
 
 def save_cache_as_pkl(save_directory, result, label):
     if save_directory:
-        file_name = '{}.pkl'.format(label + str(int(time.time())))
+        date = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        file_name = '{}-{}.pkl'.format(date, label)
         file_path = os.path.join(save_directory, file_name)
         with open(file_path, 'wb') as f:
             pickle.dump(result, f)
