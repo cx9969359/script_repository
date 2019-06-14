@@ -3,10 +3,14 @@ import argparse
 import os
 import pickle
 import xml.etree.cElementTree as ET
+from functools import partial
+from multiprocessing import cpu_count
+from multiprocessing.pool import Pool
 
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
+import time
 
 
 def parse_xml(xml_path, target_label):
@@ -41,7 +45,8 @@ def get_all_xml_regions_of_target_label(xml_file_directory, target_label):
     return dict
 
 
-def calc_pre_recall_F1_by_fixed_conf(confidence, pkl_file_list, doctor_regions_dict, target_label):
+def calc_pre_recall_F1_by_fixed_conf(confidence, pickle_file_directory, pkl_file_list, doctor_regions_dict,
+                                     target_label):
     Total_TP1, Total_TP2, Total_FP, Total_FN = 0, 0, 0, 0
     for file in pkl_file_list:
         file_name = file.split('.')[0]
@@ -64,14 +69,20 @@ def calc_pre_recall_F1_by_fixed_conf(confidence, pkl_file_list, doctor_regions_d
     return precision, recall, F1
 
 
-def get_precisions_recalls_F1s_by_confidences(sorted_confidence_list, pkl_file_list, doctor_regions_dict, target_label):
-    precision_list, recall_list, F1_list = [], [], []
-    for confidence in sorted_confidence_list:
-        precision, recall, F1 = calc_pre_recall_F1_by_fixed_conf(confidence, pkl_file_list, doctor_regions_dict,
-                                                                 target_label)
-        precision_list.append(precision)
-        recall_list.append(recall)
-        F1_list.append(F1)
+def get_precisions_recalls_F1s_by_confidences(sorted_confidence_list, pickle_file_directory, pkl_file_list,
+                                              doctor_regions_dict, target_label):
+    _calc_pre_recall_F1_by_fixed_conf = partial(calc_pre_recall_F1_by_fixed_conf,
+                                                pickle_file_directory=pickle_file_directory,
+                                                pkl_file_list=pkl_file_list,
+                                                doctor_regions_dict=doctor_regions_dict, target_label=target_label)
+    pool = Pool(cpu_count() * 2)
+    precision_recall_F1_list = pool.map(_calc_pre_recall_F1_by_fixed_conf, sorted_confidence_list)
+    pool.close()
+    pool.join()
+
+    precision_list = [i[0] for i in precision_recall_F1_list]
+    recall_list = [i[1] for i in precision_recall_F1_list]
+    F1_list = [i[2] for i in precision_recall_F1_list]
     return precision_list, recall_list, F1_list
 
 
@@ -82,17 +93,21 @@ def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label
     ###############################################################################
     # 截取部分confidence在0.6以上的部分
     sorted_confidence_list = np.array(sorted_confidence_list)
-    sorted_confidence_list = sorted_confidence_list[sorted_confidence_list >= 0.985]
+    sorted_confidence_list = sorted_confidence_list[sorted_confidence_list >= 0.9]
     print('confidence_length', len(sorted_confidence_list))
     ###############################################################################
 
     # 先将所有的doctor_xml文件中target_label对应的regions整理成字典{'file1': [], 'file2': [], ...}
     all_doctor_xml_regions_for_single_label = get_all_xml_regions_of_target_label(xml_file_directory, target_label)
 
+    print('开始计算')
+    start_time = time.time()
     precision_list, recall_list, F1_list = get_precisions_recalls_F1s_by_confidences(sorted_confidence_list,
+                                                                                     pickle_file_directory,
                                                                                      pkl_file_list,
                                                                                      all_doctor_xml_regions_for_single_label,
                                                                                      target_label)
+    print('用时{}s'.format(time.time() - start_time))
     result_dict = {}
     result_dict['label'] = target_label
     result_dict['confidence_list'] = sorted_confidence_list
