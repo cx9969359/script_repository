@@ -142,7 +142,7 @@ def show_result(show_image, result_list, label_group, output_image_path):
         plt.figure(figsize=(12, 6))
         plt.xlabel('confidence')
         plt.yticks(np.arange(0, 1, 0.05))
-        plt.legend(loc=0)
+
         for label in group:
             result = {}
             for i in result_list:
@@ -160,6 +160,7 @@ def show_result(show_image, result_list, label_group, output_image_path):
                      label=recall_label)
             plt.plot(result['confidence_list'], result['F1_list'], color=result['color'], linestyle='-.',
                      label=f1_label)
+        plt.legend(loc=0)
         if (show_image):
             plt.show()
         else:
