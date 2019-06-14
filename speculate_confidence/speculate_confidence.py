@@ -288,8 +288,7 @@ def get_all_pkl_label(pickle_file_directory, pkl_file_list):
 
 def save_cache_as_pkl(save_directory, result, label):
     if save_directory:
-        date = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-        file_name = '{}-{}.pkl'.format(date, label)
+        file_name = '{}.pkl'.format(label)
         file_path = os.path.join(save_directory, file_name)
         with open(file_path, 'wb') as f:
             pickle.dump(result, f)
@@ -323,11 +322,20 @@ if __name__ == '__main__':
     need_label_set, need_label_group = trim_label_group(need_label_group, pkl_label_set, args.group_size)
     result_list = []
     for label in need_label_set:
-        result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label, confidence_offset)
-        label_color = label_color_dict[label]
-        result['color'] = label_color
-        save_cache_as_pkl(args.result_cache_directory, result, label)
+        # 读取已保存的cache文件
+        input_cache_directory = args.input_cache_directory
+        if input_cache_directory and ((label + '.pkl') in os.listdir(input_cache_directory)):
+            file_path = os.path.join(input_cache_directory, label + '.pkl')
+            with open(file_path, 'rb') as f:
+                result = pickle.load(f)
+        # 计算result
+        else:
+            result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label, confidence_offset)
+            label_color = label_color_dict[label]
+            result['color'] = label_color
+            save_cache_as_pkl(args.save_cache_directory, result, label)
         result_list.append(result)
+
     # 展现结果
     show_image = args.show_image
     output_image_path = args.output_image_path

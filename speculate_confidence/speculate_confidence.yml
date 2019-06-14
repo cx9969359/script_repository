@@ -11,12 +11,15 @@
 --output_image_path: 'F:/test_0418_cache'
 
 # 计算结果cache保存路径,为空时不保存
---result_cache_directory: 'F:/test_0418_cache'
+--save_cache_directory: 'F:/test_0418_cache'
+
+# 读取cache文件的路径
+--input_cache_directory: ''
 
 
 # 标签列表,default_format: [[label_group1], [label_group2], ...]
-#--label_group: [['hsil','lsil']]
---label_group: []
+--label_group: [['hsil','lsil']]
+#--label_group: []
 
 # 在未手动分组的情况,自动分组每组的label个数
 --group_size: 3
