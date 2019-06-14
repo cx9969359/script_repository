@@ -90,14 +90,14 @@ def get_precisions_recalls_F1s_by_confidences(sorted_confidence_list, pickle_fil
     return precision_list, recall_list, F1_list
 
 
-def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label):
+def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label, confidence_offset):
     pkl_file_list = get_pickle_file_list(pickle_file_directory)
     # 获取所有image的置信度列表
     sorted_confidence_list = get_all_image_region_confidence(pickle_file_directory, target_label)
     ###############################################################################
     # 截取部分confidence在0.6以上的部分
     sorted_confidence_list = np.array(sorted_confidence_list)
-    sorted_confidence_list = sorted_confidence_list[sorted_confidence_list >= 0.985]
+    sorted_confidence_list = sorted_confidence_list[sorted_confidence_list >= confidence_offset]
     print('confidence_length', len(sorted_confidence_list))
     ###############################################################################
 
@@ -135,7 +135,7 @@ def get_all_image_region_confidence(pickle_file_directory, label):
     return all_confidence
 
 
-def show_result(result_list):
+def show_result(show_image, result_list, output_image_path):
     plt.figure(figsize=(12, 6))
     for result in result_list:
         color = result['color']
@@ -148,7 +148,14 @@ def show_result(result_list):
         plt.plot(confidence_list, precision_list, color=color, linestyle='dashed', label='precision')
         plt.plot(confidence_list, recall_list, color=color, linestyle='dotted', label='recall')
     plt.xlabel('confidence')
-    plt.show()
+    plt.yticks(np.arange(0, 1, 0.05))
+
+    if (show_image):
+        plt.show()
+    else:
+        file_name = '{}.png'.format(int(time.time()))
+        save_path = os.path.join(output_image_path, file_name)
+        plt.savefig(save_path, dpi=300)
 
 
 def get_pickle_file_list(pickle_directory):
@@ -234,14 +241,17 @@ if __name__ == '__main__':
     args = parse_arg()
     pickle_file_directory = args.pkl_file_directory
     xml_file_directory = args.xml_file_directory
+    confidence_offset = args.confidence_offset
     label_list = args.label_list
     label_color_dict = args.label_color
     # 根据label分类
     result_list = []
     for label in label_list:
-        result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label)
+        result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label, confidence_offset)
         label_color = label_color_dict[label]
         result['color'] = label_color
         result_list.append(result)
     # 展现结果
-    show_result(result_list)
+    show_image = args.show_image
+    output_image_path = args.output_image_path
+    show_result(show_image, result_list, output_image_path)
