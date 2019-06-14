@@ -244,6 +244,17 @@ def trim_label_group(label_group):
     return set(label_list)
 
 
+def get_all_pkl_label(pickle_file_directory, pkl_file_list):
+    label_list = []
+    for file in pkl_file_list:
+        pkl_path = os.path.join(pickle_file_directory, file)
+        with open(pkl_path, 'rb') as f:
+            result = pickle.load(f)
+            for k, v in result.items():
+                label_list.append(k)
+    return set(label_list)
+
+
 def parse_arg():
     parser = argparse.ArgumentParser()
     parser.add_argument('yml_path', type=str, help='path to pkl_files')
@@ -263,10 +274,15 @@ if __name__ == '__main__':
     confidence_offset = args.confidence_offset
     label_group = args.label_group
     label_color_dict = args.label_color
+
+    pkl_file_list = get_pickle_file_list(pickle_file_directory)
+    pkl_label_set = get_all_pkl_label(pickle_file_directory, pkl_file_list)
+    print(pkl_label_set)
+    
     # 根据label分类
-    label_set = trim_label_group(label_group)
+    need_label_set = trim_label_group(label_group)
     result_list = []
-    for label in label_set:
+    for label in need_label_set:
         result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label, confidence_offset)
         label_color = label_color_dict[label]
         result['color'] = label_color
