@@ -2,6 +2,7 @@
 import argparse
 import os
 import pickle
+import time
 import xml.etree.cElementTree as ET
 from functools import partial
 from multiprocessing import cpu_count
@@ -10,7 +11,6 @@ from multiprocessing.pool import Pool
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
-import time
 
 
 def parse_xml(xml_path, target_label):
@@ -75,7 +75,7 @@ def get_precisions_recalls_F1s_by_confidences(sorted_confidence_list, pickle_fil
                                                 pickle_file_directory=pickle_file_directory,
                                                 pkl_file_list=pkl_file_list,
                                                 doctor_regions_dict=doctor_regions_dict, target_label=target_label)
-    pool = Pool(cpu_count() * 2)
+    pool = Pool(cpu_count())
     precision_recall_F1_list = pool.map(_calc_pre_recall_F1_by_fixed_conf, sorted_confidence_list)
     pool.close()
     pool.join()
