@@ -10,12 +10,12 @@
 # 绘制结果保存路径
 --output_image_path: 'F:/test_0418_cache'
 
-# 标签列表
---label_list: ['hsil','lsil']
+# 标签列表，default_format: [[label_group1], [label_group2], ...]
+--label_list: [['hsil','lsil']]
 
 # 标签颜色
 --label_color: {'ade': 'deeppink', 'agc': 'b', 'agc-fn': 'olivedrab', 'asc-h':'cadetblue','asc-us':'m','atr':'c','ec':'deeppink','emc':'orange','hsil':'r','lsil':'g',
                 'mic':'indianred','met':'indigo','normal':'y','scc':'teal','str':'peachpuff','yy':'k'}
 
 # confidence offset
---confidence_offset: 0.985
+--confidence_offset: 0.989

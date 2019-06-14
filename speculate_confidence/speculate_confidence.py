@@ -143,12 +143,16 @@ def show_result(show_image, result_list, output_image_path):
         precision_list = result['precision_list']
         recall_list = result['recall_list']
         F1_list = result['F1_list']
-
-        plt.plot(confidence_list, F1_list, color=color, linestyle='solid', label='F1')
-        plt.plot(confidence_list, precision_list, color=color, linestyle='dashed', label='precision')
-        plt.plot(confidence_list, recall_list, color=color, linestyle='dotted', label='recall')
+        label = result['label']
+        f1_label = label + ': F1'
+        precision_label = label + ': precision'
+        recall_label = label + ': recall'
+        plt.plot(confidence_list, precision_list, color=color, linestyle='solid', label=precision_label)
+        plt.plot(confidence_list, recall_list, color=color, linestyle='dotted', label=recall_label)
+        plt.plot(confidence_list, F1_list, color=color, linestyle='-.', label=f1_label)
     plt.xlabel('confidence')
     plt.yticks(np.arange(0, 1, 0.05))
+    plt.legend(loc=0)
 
     if (show_image):
         plt.show()
