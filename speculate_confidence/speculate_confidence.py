@@ -255,6 +255,14 @@ def get_all_pkl_label(pickle_file_directory, pkl_file_list):
     return set(label_list)
 
 
+def save_cache_as_pkl(save_directory, result, label):
+    if save_directory:
+        file_name = '{}.pkl'.format(label + str(int(time.time())))
+        file_path = os.path.join(save_directory, file_name)
+        with open(file_path, 'wb') as f:
+            pickle.dump(result, f)
+
+
 def parse_arg():
     parser = argparse.ArgumentParser()
     parser.add_argument('yml_path', type=str, help='path to pkl_files')
@@ -278,7 +286,7 @@ if __name__ == '__main__':
     pkl_file_list = get_pickle_file_list(pickle_file_directory)
     pkl_label_set = get_all_pkl_label(pickle_file_directory, pkl_file_list)
     print(pkl_label_set)
-    
+
     # 根据label分类
     need_label_set = trim_label_group(label_group)
     result_list = []
@@ -286,6 +294,7 @@ if __name__ == '__main__':
         result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label, confidence_offset)
         label_color = label_color_dict[label]
         result['color'] = label_color
+        save_cache_as_pkl(args.result_cache_directory, result, label)
         result_list.append(result)
     # 展现结果
     show_image = args.show_image

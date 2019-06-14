@@ -10,6 +10,10 @@
 # 绘制结果保存路径
 --output_image_path: 'F:/test_0418_cache'
 
+# 计算结果cache保存路径,为空时不保存
+--result_cache_directory: 'F:/test_0418_cache'
+
+
 # 标签列表，default_format: [[label_group1], [label_group2], ...]
 --label_group: [['hsil','lsil']]
 
