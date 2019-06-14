@@ -238,12 +238,21 @@ def calc_F1(P, R):
     return float('%.4f' % (2 * P * R / (P + R + OFFSET)))
 
 
-def trim_label_group(need_label_group):
-    label_list = []
-    for group in need_label_group:
-        for label in group:
-            label_list.append(label)
-    return set(label_list)
+def trim_label_group(need_label_group, pkl_label_set):
+    """
+    如果没有配置label_group, 则使用pickle文件中的label
+    :param need_label_group:
+    :param pkl_label_set:
+    :return:
+    """
+    if not need_label_group:
+        return pkl_label_set
+    else:
+        label_list = []
+        for group in need_label_group:
+            for label in group:
+                label_list.append(label)
+        return set(label_list)
 
 
 def get_all_pkl_label(pickle_file_directory, pkl_file_list):
@@ -291,7 +300,7 @@ if __name__ == '__main__':
     print(pkl_label_set)
 
     # 根据label分类
-    need_label_set = trim_label_group(need_label_group)
+    need_label_set = trim_label_group(need_label_group, pkl_label_set)
     result_list = []
     for label in need_label_set:
         result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label, confidence_offset)
