@@ -8,6 +8,6 @@
 --label_list: ['lsil']
 
 # 标签颜色
---label_color: {'agc': 'r', 'hsil': 'g', 'lsil': 'b'}
+--label_color: {'agc': 'r', 'hsil': 'g', 'lsil': 'r'}
 
 

@@ -80,9 +80,11 @@ def get_precisions_recalls_F1s_by_confidences(sorted_confidence_list, pickle_fil
     pool.close()
     pool.join()
 
-    precision_list = [i[0] for i in precision_recall_F1_list]
-    recall_list = [i[1] for i in precision_recall_F1_list]
-    F1_list = [i[2] for i in precision_recall_F1_list]
+    precision_list, recall_list, F1_list = [], [], []
+    for i in precision_recall_F1_list:
+        precision_list.append(i[0])
+        precision_list.append(i[1])
+        precision_list.append(i[2])
     return precision_list, recall_list, F1_list
 
 
