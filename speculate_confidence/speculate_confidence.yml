@@ -11,7 +11,7 @@
 --output_image_path: 'F:/test_0418_cache'
 
 # 标签列表，default_format: [[label_group1], [label_group2], ...]
---label_list: [['hsil','lsil']]
+--label_group: [['hsil','lsil']]
 
 # 标签颜色
 --label_color: {'ade': 'deeppink', 'agc': 'b', 'agc-fn': 'olivedrab', 'asc-h':'cadetblue','asc-us':'m','atr':'c','ec':'deeppink','emc':'orange','hsil':'r','lsil':'g',

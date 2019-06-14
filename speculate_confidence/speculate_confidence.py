@@ -229,6 +229,14 @@ def calc_F1(P, R):
     return float('%.4f' % (2 * P * R / (P + R + OFFSET)))
 
 
+def trim_label_group(label_group):
+    label_list = []
+    for group in label_group:
+        for label in group:
+            label_list.append(label)
+    return set(label_list)
+
+
 def parse_arg():
     parser = argparse.ArgumentParser()
     parser.add_argument('yml_path', type=str, help='path to pkl_files')
@@ -246,11 +254,12 @@ if __name__ == '__main__':
     pickle_file_directory = args.pkl_file_directory
     xml_file_directory = args.xml_file_directory
     confidence_offset = args.confidence_offset
-    label_list = args.label_list
+    label_group = args.label_group
     label_color_dict = args.label_color
     # 根据label分类
+    label_set = trim_label_group(label_group)
     result_list = []
-    for label in label_list:
+    for label in label_set:
         result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label, confidence_offset)
         label_color = label_color_dict[label]
         result['color'] = label_color
