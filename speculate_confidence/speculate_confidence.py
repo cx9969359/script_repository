@@ -41,27 +41,14 @@ def get_all_xml_regions_of_target_label(xml_file_directory, target_label):
     return dict
 
 
-def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label):
-    pkl_file_list = get_pickle_file_list(pickle_file_directory)
-    # 获取所有image的置信度列表
-    sorted_confidence_list = get_all_image_region_confidence(pickle_file_directory, target_label)
-    ###############################################################################
-    # 截取部分confidence在0.6以上的部分
-    sorted_confidence_list = np.array(sorted_confidence_list)
-    sorted_confidence_list = sorted_confidence_list[sorted_confidence_list >= 0.985]
-    print('confidence_length', len(sorted_confidence_list))
-    ###############################################################################
-
-    # 先将所有的doctor_xml文件中target_label对应的regions整理成字典{'file1': [], 'file2': [], ...}
-    all_doctor_xml_regions_for_single_label = get_all_xml_regions_of_target_label(xml_file_directory, target_label)
-
+def get_precisions_recalls_F1s_by_confidences(sorted_confidence_list, pkl_file_list, doctor_regions_dict, target_label):
     precision_list, recall_list, F1_list = [], [], []
     for confidence in sorted_confidence_list:
         Total_TP1, Total_TP2, Total_FP, Total_FN = 0, 0, 0, 0
         for file in pkl_file_list:
             file_name = file.split('.')[0]
             try:
-                doctor_region_list = all_doctor_xml_regions_for_single_label[file_name]
+                doctor_region_list = doctor_regions_dict[file_name]
             except KeyError:
                 msg = 'No {} doctor xml'.format(file_name)
                 raise Exception(msg)
@@ -79,6 +66,27 @@ def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label
         recall_list.append(recall)
         F1 = calc_F1(precision, recall)
         F1_list.append(F1)
+    return precision_list, recall_list, F1_list
+
+
+def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label):
+    pkl_file_list = get_pickle_file_list(pickle_file_directory)
+    # 获取所有image的置信度列表
+    sorted_confidence_list = get_all_image_region_confidence(pickle_file_directory, target_label)
+    ###############################################################################
+    # 截取部分confidence在0.6以上的部分
+    sorted_confidence_list = np.array(sorted_confidence_list)
+    sorted_confidence_list = sorted_confidence_list[sorted_confidence_list >= 0.985]
+    print('confidence_length', len(sorted_confidence_list))
+    ###############################################################################
+
+    # 先将所有的doctor_xml文件中target_label对应的regions整理成字典{'file1': [], 'file2': [], ...}
+    all_doctor_xml_regions_for_single_label = get_all_xml_regions_of_target_label(xml_file_directory, target_label)
+
+    precision_list, recall_list, F1_list = get_precisions_recalls_F1s_by_confidences(sorted_confidence_list,
+                                                                                     pkl_file_list,
+                                                                                     all_doctor_xml_regions_for_single_label,
+                                                                                     target_label)
     result_dict = {}
     result_dict['label'] = target_label
     result_dict['confidence_list'] = sorted_confidence_list
