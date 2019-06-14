@@ -238,21 +238,41 @@ def calc_F1(P, R):
     return float('%.4f' % (2 * P * R / (P + R + OFFSET)))
 
 
-def trim_label_group(need_label_group, pkl_label_set):
+def divide_pkl_label_into_groups(pkl_label_set, group_size):
     """
-    如果没有配置label_group, 则使用pickle文件中的label
+    将pickle_label分组成新的need_label_group
+    :param pkl_label_set:
+    :return:
+    """
+    pkl_label_list = list(pkl_label_set)
+    group = []
+    for index, value in enumerate(pkl_label_list):
+        if (index + 1) * group_size >= len(pkl_label_list):
+            part = pkl_label_list[index * group_size:]
+            group.append(part)
+            break
+        else:
+            part = pkl_label_list[index * group_size: (index + 1) * group_size]
+            group.append(part)
+    return group
+
+
+def trim_label_group(need_label_group, pkl_label_set, group_size):
+    """
+    如果没有配置label_group, 则使用pickle文件中的label, 并将pickle_label分组
     :param need_label_group:
     :param pkl_label_set:
     :return:
     """
     if not need_label_group:
-        return pkl_label_set
+        label_group = divide_pkl_label_into_groups(pkl_label_set, group_size)
+        return pkl_label_set, label_group
     else:
         label_list = []
         for group in need_label_group:
             for label in group:
                 label_list.append(label)
-        return set(label_list)
+        return set(label_list), need_label_group
 
 
 def get_all_pkl_label(pickle_file_directory, pkl_file_list):
@@ -300,7 +320,7 @@ if __name__ == '__main__':
     print(pkl_label_set)
 
     # 根据label分类
-    need_label_set = trim_label_group(need_label_group, pkl_label_set)
+    need_label_set, need_label_group = trim_label_group(need_label_group, pkl_label_set, args.group_size)
     result_list = []
     for label in need_label_set:
         result = for_each_pickle_file(pickle_file_directory, xml_file_directory, label, confidence_offset)
