@@ -137,13 +137,13 @@ def get_all_image_region_confidence(pickle_file_directory, label):
     return all_confidence
 
 
-def show_result(show_image, result_list, label_group, output_image_path, confidence_offset, y_scale):
+def show_result(show_image, result_list, label_group, output_image_path, confidence_offset, x_scale):
     # 每一个label_group一个图形
     for group in label_group:
         plt.figure(figsize=(12, 6))
         plt.xlabel('confidence')
         plt.yticks(np.arange(0, 1, 0.1))
-        plt.xticks(np.arange(confidence_offset, 1, y_scale))
+        plt.xticks(np.arange(confidence_offset, 1, x_scale))
 
         for label in group:
             result = {}
@@ -328,7 +328,7 @@ if __name__ == '__main__':
     confidence_offset = args.confidence_offset
     need_label_group = args.label_group
     label_color_dict = args.label_color
-    y_scale = args.y_scale
+    x_scale = args.x_scale
 
     start_time = time.time()
 
@@ -359,5 +359,5 @@ if __name__ == '__main__':
     # 展现结果
     show_image = args.show_image
     output_image_path = args.output_image_path
-    show_result(show_image, result_list, need_label_group, output_image_path, confidence_offset, y_scale)
+    show_result(show_image, result_list, need_label_group, output_image_path, confidence_offset, x_scale)
     print('总用时{}s'.format(time.time() - start_time))
