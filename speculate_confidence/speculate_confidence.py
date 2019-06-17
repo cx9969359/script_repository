@@ -143,6 +143,7 @@ def show_result(show_image, result_list, label_group, output_image_path):
         plt.figure(figsize=(12, 6))
         plt.xlabel('confidence')
         plt.yticks(np.arange(0, 1, 0.05))
+        plt.xticks(np.arange(0, 1, 0.05 ))
 
         for label in group:
             result = {}
@@ -328,6 +329,8 @@ if __name__ == '__main__':
     need_label_group = args.label_group
     label_color_dict = args.label_color
 
+    start_time = time.time()
+
     pkl_file_list = get_pickle_file_list(pickle_file_directory)
     pkl_label_set = get_all_pkl_label(pickle_file_directory, pkl_file_list)
     print(pkl_label_set)
@@ -356,3 +359,4 @@ if __name__ == '__main__':
     show_image = args.show_image
     output_image_path = args.output_image_path
     show_result(show_image, result_list, need_label_group, output_image_path)
+    print('总用时{}s'.format(time.time() - start_time))
