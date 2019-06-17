@@ -30,3 +30,6 @@
 
 # confidence offset
 --confidence_offset: 0.989
+
+# 显示结果y轴最小刻度
+--y_scale: 0.05
