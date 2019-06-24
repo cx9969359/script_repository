@@ -1,13 +1,13 @@
 # pkl文件夹目录
---pkl_directory: 'F:/pkl_files'
+--pkl_directory: 'F:/test_0624_pkl'
 
 # 标签优先级列表
---grade_label_list: ['agc', 'hsil', 'lsil']
+--grade_label_list: ['hsil', 'lsil', 'normal']
 
 # 最高优先级的敏感性
---highest_sensitivity: 0.9
+--highest_sensitivity: 0.95
 
 # 置信度
---confidence: 0.99
+--confidence: 0.98
 
 

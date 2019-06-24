@@ -40,9 +40,11 @@ def calc_annotation_num(pickle_file_path, label):
 
 def analyze_threshold(result_list, init_index, highest_sensitivity):
     init_threshold = result_list[init_index]
-    morbidity = float('%.2f' % ((len(result_list) - init_index) / len(result_list)))
+    morbidity = float('%.3f' % ((len(result_list) - init_index) / len(result_list)))
     if morbidity > highest_sensitivity:
+        # result_list中一起出现相同的值
         equal_index_list = [i for i, v in enumerate(result_list) if v == init_threshold]
+        # 越界取最后一个
         if (equal_index_list[-1] + 1) >= len(result_list):
             return result_list[-1]
         else:
@@ -50,6 +52,7 @@ def analyze_threshold(result_list, init_index, highest_sensitivity):
             analyze_threshold(result_list, init_index, highest_sensitivity)
             return result_list[init_index]
     else:
+        print('最高优先级标签敏感性：', morbidity)
         return result_list[init_index]
 
 

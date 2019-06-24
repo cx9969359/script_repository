@@ -6,6 +6,7 @@ import xml.etree.cElementTree as ET
 import cv2
 import numpy as np
 import pyvips
+from xml.dom.minidom import Document
 
 POINT_DISTANCE = 3
 
@@ -113,12 +114,18 @@ def check_contours(xml_path, image_path):
         max_cnt_list = trim_coordinates(max_cnt_list)
 
         # 修正坐标
-        coordinates_line = ''
+        # coordinates_line = ''
+        # for i in max_cnt_list:
+        #     list = [i[0] + x1, i[1] + y1]
+        #     coordinates_line = coordinates_line + str(list[0]) + ',' + str(list[1]) + ';'
+        # coordinates_line = coordinates_line[:-1]
+        # coordinates_list.append(coordinates_line)
+        # 修正坐标
+        sub_coordinates_list = []
         for i in max_cnt_list:
             list = [i[0] + x1, i[1] + y1]
-            coordinates_line = coordinates_line + str(list[0]) + ',' + str(list[1]) + ';'
-        coordinates_line = coordinates_line[:-1]
-        coordinates_list.append(coordinates_line)
+            sub_coordinates_list.append(list)
+        coordinates_list.append(sub_coordinates_list)
     return label_list, coordinates_list
 
 
@@ -129,11 +136,48 @@ def write_result_txt_file(txt_file_path, label_list, coordinates_list):
             result_file.writelines(coordinates_list[index] + '\n')
 
 
+def write_result_to_xml_file(output_xml_path, label_list, coordinates_list):
+    doc = Document()
+    annotation = doc.createElement('annotation')
+    doc.appendChild(annotation)
+
+    filename = doc.createElement('filename')
+    annotation.appendChild(filename)
+    file_name = doc.createTextNode(output_xml_path)
+    filename.appendChild(file_name)
+
+    for index, label in enumerate(label_list):
+        obj = doc.createElement('object')
+        annotation.appendChild(obj)
+        name = doc.createElement('name')
+        label_name = doc.createTextNode(label)
+        name.appendChild(label_name)
+
+        segmentation = doc.createElement('segmentation')
+        obj.appendChild(segmentation)
+
+        coordinates = coordinates_list[index]
+        for coordinate in coordinates:
+            points = doc.createElement('points')
+            segmentation.appendChild(points)
+            x = doc.createElement('x')
+            y = doc.createElement('y')
+            x_text = doc.createTextNode(str(coordinate[0]))
+            y_text = doc.createTextNode(str(coordinate[1]))
+            x.appendChild(x_text)
+            y.appendChild(y_text)
+            points.appendChild(x)
+            points.appendChild(y)
+
+    with open(output_xml_path, 'w') as f:
+        f.write(doc.toprettyxml(indent='    '))
+
+
 def parse_arg():
     parse = argparse.ArgumentParser()
     parse.add_argument('input_xml_directory', type=str, help='input_xml_directory')
     parse.add_argument('input_image_directory', type=str, help='input_image_directory')
-    parse.add_argument('output_txt_directory', type=str, help='output_txt_directory')
+    parse.add_argument('output_xml_directory', type=str, help='output_txt_directory')
     args = parse.parse_args()
     return args
 
@@ -142,17 +186,16 @@ if __name__ == '__main__':
     args = parse_arg()
     xml_directory = args.input_xml_directory
     image_directory = args.input_image_directory
-    output_txt_directory = args.output_txt_directory
+    output_xml_directory = args.output_xml_directory
     xml_file_list = scan_xml_files(xml_directory)
     for xml_file in xml_file_list:
         file_name = xml_file.split('.')[0]
         xml_path = os.path.join(xml_directory, xml_file)
         image_path = os.path.join(image_directory, file_name + '.tif')
 
-        if not os.path.isdir(output_txt_directory):
-            os.makedirs(output_txt_directory)
-        txt_file_path = os.path.join(output_txt_directory, file_name + '.txt')
-
+        if not os.path.isdir(output_xml_directory):
+            os.makedirs(output_xml_directory)
         label_list, coordinates_list = check_contours(xml_path, image_path)
 
-        write_result_txt_file(txt_file_path, label_list, coordinates_list)
+        output_xml_path = os.path.join(output_xml_directory, file_name + '.xml')
+        write_result_to_xml_file(output_xml_path, label_list, coordinates_list)

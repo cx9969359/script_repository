@@ -54,11 +54,7 @@ def calc_pre_recall_F1_by_fixed_conf(confidence, all_pkl_result_dict, pkl_file_l
     Total_TP1, Total_TP2, Total_FP, Total_FN = 0, 0, 0, 0
     for file in pkl_file_list:
         file_name = file.split('.')[0]
-        try:
-            doctor_region_list = doctor_regions_dict[file_name]
-        except KeyError:
-            msg = 'No {} doctor xml'.format(file_name)
-            raise Exception(msg)
+        doctor_region_list = doctor_regions_dict[file_name]
         result = all_pkl_result_dict[file]
         computer_region_list = result[target_label]
         TP1, TP2, FP, FN = handle_result(computer_region_list, doctor_region_list, confidence)
@@ -78,10 +74,17 @@ def get_precisions_recalls_F1s_by_confidences(sorted_confidence_list, all_pkl_re
                                                 all_pkl_result_dict=all_pkl_result_dict,
                                                 pkl_file_list=pkl_file_list,
                                                 doctor_regions_dict=doctor_regions_dict, target_label=target_label)
-    pool = Pool(cpu_count())
-    precision_recall_F1_list = pool.map(_calc_pre_recall_F1_by_fixed_conf, sorted_confidence_list)
-    pool.close()
-    pool.join()
+    # pool = Pool(cpu_count())
+    # precision_recall_F1_list = pool.map(_calc_pre_recall_F1_by_fixed_conf, sorted_confidence_list)
+    # pool.close()
+    # pool.join()
+    precision_recall_F1_list = []
+    print(len(sorted_confidence_list))
+    for confidence in sorted_confidence_list:
+        start = time.time()
+        result = _calc_pre_recall_F1_by_fixed_conf(confidence)
+        print("cost time for append result: {:f}s".format(time.time() - start))
+        precision_recall_F1_list.append(result)
 
     precision_list, recall_list, F1_list = [], [], []
     for i in precision_recall_F1_list:
@@ -114,7 +117,7 @@ def for_each_pickle_file(pickle_file_directory, xml_file_directory, target_label
                                                                                      pkl_file_list,
                                                                                      all_doctor_xml_regions_for_single_label,
                                                                                      target_label)
-    print('用时{}s'.format(time.time() - start_time))
+    print('cost time:{}s'.format(time.time() - start_time))
     result_dict = {}
     result_dict['label'] = target_label
     result_dict['confidence_list'] = sorted_confidence_list
@@ -344,11 +347,13 @@ if __name__ == '__main__':
 
     pkl_file_list = get_pickle_file_list(pickle_file_directory)
     pkl_label_set = get_all_pkl_label(pickle_file_directory, pkl_file_list)
-    print(pkl_label_set)
+    pkl_label_list = sorted(list(pkl_label_set))
+    print(pkl_label_list)
 
     # 根据label分类
-    need_label_set, need_label_group = trim_label_group(need_label_group, pkl_label_set, args.group_size)
+    need_label_set, need_label_group = trim_label_group(need_label_group, pkl_label_list, args.group_size)
     all_pkl_result_dict = get_all_pkl_result_dict(pickle_file_directory, pkl_file_list)
+    
     result_list = []
     for label in need_label_set:
         # 读取已保存的cache文件
