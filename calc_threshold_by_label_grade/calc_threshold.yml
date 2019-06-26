@@ -1,13 +1,14 @@
 # pkl文件夹目录
---pkl_directory: 'F:/test_0624_pkl'
+#--pkl_directory: 'F:/res18_v1_2_0130/test_0624_pkl/jf_data'
+--pkl_directory: 'F:/res18_v1_2_0130/train_test_0624_pkl/jf_data'
 
 # 标签优先级列表
 --grade_label_list: ['hsil', 'lsil', 'normal']
 
 # 最高优先级的敏感性
---highest_sensitivity: 0.95
+--highest_sensitivity: 0.90
 
 # 置信度
---confidence: 0.98
+--confidence: 0.5
 
 

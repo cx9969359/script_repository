@@ -353,7 +353,8 @@ if __name__ == '__main__':
     # 根据label分类
     need_label_set, need_label_group = trim_label_group(need_label_group, pkl_label_list, args.group_size)
     all_pkl_result_dict = get_all_pkl_result_dict(pickle_file_directory, pkl_file_list)
-    
+
+    # Format：result_list = [{'label': '', 'F1_list': [], 'P_list': [], ...}, ...]
     result_list = []
     for label in need_label_set:
         # 读取已保存的cache文件
